@@ -202,8 +202,10 @@ class TestPrecedenciaD010D011(unittest.TestCase):
         r = maturar_pre_mrna("CAGUCCAGU")
         self.assertEqual(r.sitios_gu, (2, 7))
         self.assertEqual(r.sitios_ag, (1, 6))
-        self.assertEqual(maturar_pre_mrna("").sitios_gu, ())
-        self.assertEqual(maturar_pre_mrna("GUX").sitios_ag, ())
+        for seq in ("", "GUX", "GUXAG", "GUCCCCACCCCCCCCCCAGT"):
+            with self.subTest(seq=repr(seq)):
+                r = maturar_pre_mrna(seq)
+                self.assertEqual((r.sitios_gu, r.sitios_ag), ((), ()))
 
 
 class TestSelecaoESplicing(unittest.TestCase):
