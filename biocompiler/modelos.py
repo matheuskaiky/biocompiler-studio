@@ -84,3 +84,33 @@ class ResultadoAT3:
     utr5: str
     utr3: str
     eventos: tuple[Evento, ...]
+
+
+@dataclass(frozen=True)
+class ResultadoAT4:
+    """Resultado estruturado do alinhamento de DNA local/global (AT4)."""
+
+    seq1: str
+    seq2: str
+    metodo: str
+    match: int | None
+    mismatch: int | None
+    gap: int | None
+    ok: bool
+    status: str
+    resultado: str
+    erros: tuple[str, ...]
+    matriz: tuple[tuple[int, ...], ...] | None
+    direcoes: tuple[tuple[str, ...], ...] | None
+    inicio_traceback: tuple[int, int] | None
+    caminho: tuple[tuple[int, int], ...]
+    alinhado1: str
+    marcadores: str
+    alinhado2: str
+    score: int | None
+    matches: int
+    mismatches: int
+    gaps: int
+    tamanho: int
+    observacao: str
+    eventos: tuple[Evento, ...]
