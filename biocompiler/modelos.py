@@ -32,3 +32,31 @@ class ResultadoAT1:
     utr3: str
     resto_quadro: int | None
     eventos: tuple[Evento, ...]
+
+
+@dataclass(frozen=True)
+class Intron:
+    """Íntron removido durante a maturação de pré-mRNA (AT2)."""
+
+    posicao_gu: int
+    posicao_branch: int
+    posicao_ag: int
+
+
+@dataclass(frozen=True)
+class ResultadoAT2:
+    """Resultado estruturado da maturação pré-mRNA → mRNA maduro (AT2)."""
+
+    sequencia: str
+    ok: bool
+    status: str
+    resultado: str
+    mrna_maduro: str | None
+    rna_processado: str | None
+    cap: str | None
+    cauda_adicionada: str | None
+    bases_invalidas: tuple[tuple[int, str], ...]
+    sitios_gu: tuple[int, ...]
+    sitios_ag: tuple[int, ...]
+    introns: tuple[Intron, ...]
+    eventos: tuple[Evento, ...]
