@@ -92,7 +92,7 @@ A aplicação terá três acessos à **mesma implementação canônica**:
 
 1. Validar entrada não vazia, sem espaços internos e com letras `{A,U,C,G}`. Erros de formato extras devem ter mensagens próprias **sem substituir** os quatro resultados exigidos.
 2. Identificar candidatos `GU ... A ... AG` por varredura explícita; o `GU` inicial e o `AG` terminal integram o íntron.
-3. Para um `AG` iniciado na posição `j`, um branch point na posição `k` é elegível quando `10 <= j-k <= 30` e `k` fica **dentro do candidato**, depois do `GU` e antes do `AG` (distância medida até o primeiro `A` do `AG`, sem incluir esse próprio AG).
+3. Para um `AG` iniciado na posição `j`, um branch point `A` na posição `k` é elegível quando há **de 10 a 30 nucleotídeos entre o A e o AG**, isto é, `10 <= j-k-1 <= 30` (D009), e `k` fica **dentro do candidato**, depois do `GU` (`k >= g+2`) e antes do `AG`. Exemplo do professor: `GU CCCC A CCCCCCCCCC AG` (10 entre) é válido; com 9 entre, não.
 4. Encontrar íntrons válidos e não sobrepostos; remover todo o intervalo inclusivo `[GU ... AG]`, concatenando apenas os éxons. Não excluir nucleotídeos adjacentes.
 5. Em caso de sucesso, prefixar o **marcador textual** `m7Gppp`; adicionar literalmente `'A' * 100` à extremidade 3′; retornar também o RNA sem CAP/cauda e metadados de intervalos.
 6. Quando houver vários candidatos, empregar desempate determinístico explicitado em §5. Apresentar ao professor as escolhas e as alternativas reconhecidas.
@@ -202,7 +202,7 @@ Os exemplos de AT1 usam convenções **didáticas**, não detecção clínica de
 - Enumerar posições `GU` e `AG` por varredura; um candidato exige `GU` antes do `AG` e branch point A elegível.
 - Escolher primeiro o candidato com **menor posição do GU**, depois **menor posição do AG terminal** que satisfaça o branch point. Se houver vários A elegíveis, escolher aquele **mais próximo do AG**, documentando o critério.
 - Para múltiplos íntrons, após escolher um intervalo avançar para depois do seu `AG` na sequência **original**, evitando sobreposições; concatenar os segmentos conservados ao final, sem reinterpretação acidental das junções recém-formadas.
-- Se nenhum candidato for válido: preferir `BUG - sítio 3' ausente` quando existe GU sem AG posterior compatível; `BUG - sítio 5' ausente` quando há AG sem GU anterior possível; `BUG - branch point` quando o par GU/AG existe, mas não há A a 10–30 nt do AG. Caso nenhum sinal GU/AG exista, registrar diagnóstico adicional `BUG - íntron ausente` (caso não coberto pelos quatro exemplos, e não uma substituição dos rótulos exigidos).
+- Se nenhum candidato for válido, aplicar nesta ordem (D010): (1) existe par `GU` em `g` e `AG` em `j >= g+2` → `BUG - branch point`; (2) senão, existe algum `AG` → `BUG - sítio 5' ausente` (inclui o caso em que o AG só aparece antes de um GU, como `...AGU...`); (3) senão, existe algum `GU` → `BUG - sítio 3' ausente`; (4) nenhum sinal → diagnóstico adicional `BUG - íntron ausente` (D011; não substitui os quatro rótulos exigidos).
 - Um `GU` residual em éxon **não invalida automaticamente** uma entrada que já teve íntron válido reconhecido; não é possível saber, somente pela sequência, se ele seria um sítio 5′. Exibir esses sinais como *não selecionados* e justificar a escolha.
 - A AT2 não deve impor requisitos de preservação de ORF como condição da maturação, pois seu enunciado não pede isso. A integração poderá avisar caso o splicing resulte em RNA que a AT3 não traduza.
 
