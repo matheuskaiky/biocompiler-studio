@@ -348,6 +348,20 @@ class TestResultadoEstruturado(unittest.TestCase):
             E("PROTEINA_GERADA", None, "Met-Ala-Lys-Pro"),
             E("RESULTADO", None, CORRETO)])
 
+    def test_stop_fora_de_fase_depois_do_stop_em_fase(self):
+        # Pré-revisão P1: coleta na região inteira, sem entrar na tradução.
+        E = Evento
+        r = traduzir_mrna(mrna("AUGUAAGUAAGG"))
+        self.assertEqual((r.resultado, r.proteina, r.posicao_stop), (CORRETO, "Met", 3))
+        self.assertEqual(r.stops_fora_de_fase, (7,))
+        self.assertEqual(r.codons, ("AUG", "UAA"))
+        self.assertEqual(list(r.eventos), [
+            E("CAP_VALIDADA", None, "m7Gppp"), E("POLIA_VALIDADA", None, "100"),
+            E("BASES_VALIDADAS", None, ""), E("AUG_ENCONTRADO", 0, "AUG"),
+            E("CODON_TRADUZIDO", 0, "AUG:Met"), E("STOP_ENCONTRADO", 3, "UAA"),
+            E("STOP_FORA_DE_FASE", 7, "UAA"),
+            E("PROTEINA_GERADA", None, "Met"), E("RESULTADO", None, CORRETO)])
+
     def test_eventos_erros(self):
         E = Evento
         self.assertEqual(list(traduzir_mrna("").eventos), [E("RESULTADO", None, VAZIA)])
