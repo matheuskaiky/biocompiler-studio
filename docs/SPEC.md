@@ -216,7 +216,7 @@ Em texto puro, uma sequência que termina em 101 adeninas pode ser interpretada 
 
 ### 5.4 Quadro de leitura na AT3
 
-Se não existir STOP em fase, mas houver STOP fora de fase ou trecho final incompleto após o AUG, preferir `BUG - quadro de leitura`; se não houver sinal de STOP e o percurso terminar em trincas completas, `BUG - STOP ausente`. Tornar essa regra explícita na seção “Por que este diagnóstico?”.
+Se não existir STOP em fase (D012): existe `UAA`, `UAG` ou `UGA` numa posição `p` da região transcrita com `(p - posicao_AUG) % 3 == 1` (STOP deslocado uma base para frente, como por inserção de uma base) → `BUG - quadro de leitura`; caso contrário → `BUG - STOP ausente`. STOPs na fase +2 e a contagem de bases restantes **não** decidem. A regra original (qualquer STOP fora de fase) classificava errado o caso 4 do enunciado (`CCAUGGCUAAACCGGGCGG`, com `UAA` acidental na fase +2). Tornar essa regra explícita na seção “Por que este diagnóstico?”. Política de projeto — não especificada formalmente pelo professor.
 
 ### 5.5 Precisão e padronização
 
