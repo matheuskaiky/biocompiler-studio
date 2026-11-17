@@ -188,10 +188,11 @@ Esta seção é parte indispensável do projeto: evita códigos que apenas class
 
 Os exemplos de AT1 usam convenções **didáticas**, não detecção clínica de mutações. Aplicar:
 
+0. Entrada vazia → `BUG - entrada vazia` (D008; diagnóstico extra, não é um dos seis casos).
 1. Caractere proibido → `BUG - base inválida`.
 2. Ausência de `ATG` → `BUG - START ausente`.
 3. Varrer códons em fase após o primeiro ATG. Se houver **dois ou mais STOP em fase** depois do START, classificar `BUG - nonsense / STOP prematuro`, interpretando o primeiro como prematuro, conforme exemplo com `ATGGCTTAACCGGGCTAA`. **Explicitar a ressalva:** biologicamente, um segundo STOP pode simplesmente estar na região 3′ não traduzida; não existe confirmação de nonsense sem referência/contexto.
-4. Na ausência de STOP em fase: se existir `TAA`, `TAG` ou `TGA` **fora de fase** após o START, ou restarem bases incompletas para leitura trinca a trinca, classificar `BUG - frameshift`. Se não houver tais indícios, `BUG - STOP ausente`.
+4. Na ausência de STOP em fase (D007): se o trecho do primeiro ATG até o fim da sequência **não tiver comprimento múltiplo de 3** (restam 1 ou 2 bases incompletas), classificar `BUG - frameshift`; caso contrário, `BUG - STOP ausente`. STOPs fora de fase **não** decidem a classificação (o caso 4 do professor, `ATGGCTAAACCGGGC`, contém `TAA` fora de fase e é `STOP ausente`); são apenas exibidos na visualização.
 5. Com exatamente um STOP em fase, classificar `CORRETO`; bases antes do START e depois do STOP não são traduzidas, e a transcrição continua sendo feita na **sequência inteira**.
 
 *Nota de implementação:* os passos 3–5 são **política de compatibilidade proposta** para tornar os seis casos reprodutíveis; os PDFs não oferecem uma gramática formal suficiente para distinguir todos os possíveis casos reais. Adicionar testes específicos que documentem essa escolha.
