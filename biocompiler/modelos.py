@@ -60,3 +60,27 @@ class ResultadoAT2:
     sitios_ag: tuple[int, ...]
     introns: tuple[Intron, ...]
     eventos: tuple[Evento, ...]
+
+
+@dataclass(frozen=True)
+class ResultadoAT3:
+    """Resultado estruturado da tradução mRNA maduro → proteína (AT3)."""
+
+    sequencia: str
+    ok: bool
+    status: str
+    resultado: str
+    proteina: str | None
+    aminoacidos: tuple[str, ...]
+    cap_ok: bool
+    tamanho_cauda: int | None
+    regiao_transcrita: str | None
+    bases_invalidas: tuple[tuple[int, str], ...]
+    posicao_start: int | None
+    posicao_stop: int | None
+    codon_stop: str | None
+    stops_fora_de_fase: tuple[int, ...]
+    codons: tuple[str, ...]
+    utr5: str
+    utr3: str
+    eventos: tuple[Evento, ...]
