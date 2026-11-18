@@ -443,3 +443,36 @@ def json_fluxo(
         "avisos": [],
     }
     return json.dumps(doc, ensure_ascii=False, indent=2) + "\n"
+
+
+def artefatos_lote(atividade: str, resultados) -> dict[str, str]:
+    """Monta os arquivos de exportação de um lote AT1–AT3 na ordem da CLI."""
+    return {f"{atividade}_resultados.txt": csv_lote(atividade, resultados)}
+
+
+def artefatos_at4(resultados, delimitador: str = ";") -> dict[str, str]:
+    """Monta os arquivos de exportação da AT4 para os alinhamentos OK."""
+    arquivos: dict[str, str] = {}
+    for r in resultados:
+        if not r.ok:
+            continue
+        m = r.metodo
+        arquivos[f"alinhamento_{m}.txt"] = relatorio_at4(r)
+        arquivos[f"matriz_pontuacao_{m}.csv"] = csv_matriz_pontuacao(r, delimitador)
+        arquivos[f"matriz_traceback_{m}.csv"] = csv_matriz_traceback(r, delimitador)
+        arquivos[f"alinhamento_{m}.csv"] = csv_alinhamento(r, delimitador)
+    if len(resultados) == 2 and all(r.ok for r in resultados):
+        arquivos["comparacao.txt"] = texto_comparacao(resultados[0], resultados[1])
+    return arquivos
+
+
+def artefatos_fluxo(rf, delimitador: str = ";") -> dict[str, str]:
+    """Monta os arquivos de exportação do modo `all` na ordem da CLI."""
+    arquivos: dict[str, str] = {
+        "relatorio_mestre.txt": relatorio_fluxo(rf),
+        "at1_resultados.txt": csv_lote("at1", [rf.seq1.at1, rf.seq2.at1]),
+        "at2_resultados.txt": csv_lote("at2", [rf.seq1.at2, rf.seq2.at2]),
+        "at3_resultados.txt": csv_lote("at3", [rf.seq1.at3, rf.seq2.at3]),
+    }
+    arquivos.update(artefatos_at4(rf.alinhamentos, delimitador))
+    return arquivos

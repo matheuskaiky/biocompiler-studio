@@ -269,3 +269,32 @@ def alinhar_dna(
         observacao=observacao,
         eventos=tuple(eventos),
     )
+
+
+def candidatos_celula(
+    r: ResultadoAT4,
+    i: int,
+    j: int,
+) -> tuple[tuple[str, int], ...]:
+    """Devolve os candidatos da recorrência da célula (i, j) a partir de r.matriz."""
+    if not r.ok or r.matriz is None:
+        raise ValueError("resultado sem matriz válida")
+    m = len(r.seq1)
+    n = len(r.seq2)
+    if i < 0 or i > m or j < 0 or j > n:
+        raise ValueError(f"célula fora da matriz: ({i}, {j})")
+    if i == 0 or j == 0:
+        return ()
+
+    s = r.match if r.seq1[i - 1] == r.seq2[j - 1] else r.mismatch
+    diag = r.matriz[i - 1][j - 1] + s
+    cima = r.matriz[i - 1][j] + r.gap
+    esq = r.matriz[i][j - 1] + r.gap
+    cands: tuple[tuple[str, int], ...] = (
+        ("diagonal", diag),
+        ("vertical", cima),
+        ("horizontal", esq),
+    )
+    if r.metodo == "local":
+        cands = cands + (("zero", 0),)
+    return cands

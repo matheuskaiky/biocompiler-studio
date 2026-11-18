@@ -30,6 +30,11 @@ AT3_EXEMPLOS: tuple[str, ...] = (
 
 AT4_EXEMPLO: tuple[str, str] = ("ACGTAC", "ACGTTC")
 
+ALL_EXEMPLO: tuple[str, str] = (
+    "CCATGGCTGTCCCCCCCCCCACCCCCCCCCCCCCCCAGAAACCGTAAGG",
+    "CCATGGCTGTCCCCCCCCCCACCCCCCCCCCCCCCCAGAATCCGTAAGG",
+)
+
 
 def texto_exemplos() -> str:
     """Formata os exemplos didáticos para exibição no terminal."""

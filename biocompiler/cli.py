@@ -265,7 +265,7 @@ def _executar_lote(args: argparse.Namespace) -> int:
 
     saidas_gravadas: list[str] = []
     if destino is not None:
-        conteudo_csv = exports.csv_lote(atividade, resultados)
+        conteudo_csv = next(iter(exports.artefatos_lote(atividade, resultados).values()))
         try:
             saidas_gravadas = _gravar_arquivos([(destino, conteudo_csv)], args.quiet)
         except OSError as exc:
@@ -412,31 +412,10 @@ def _executar_at4(args: argparse.Namespace) -> int:
     saidas_gravadas: list[str] = []
     if pasta_destino is not None and todos_ok:
         delimitador = "," if args.delimiter == "comma" else ";"
-        arquivos: list[tuple[Path, str]] = []
-        for r in resultados:
-            m = r.metodo
-            arquivos.extend([
-                (pasta_destino / f"alinhamento_{m}.txt", exports.relatorio_at4(r)),
-                (
-                    pasta_destino / f"matriz_pontuacao_{m}.csv",
-                    exports.csv_matriz_pontuacao(r, delimitador),
-                ),
-                (
-                    pasta_destino / f"matriz_traceback_{m}.csv",
-                    exports.csv_matriz_traceback(r, delimitador),
-                ),
-                (
-                    pasta_destino / f"alinhamento_{m}.csv",
-                    exports.csv_alinhamento(r, delimitador),
-                ),
-            ])
-        if metodo == "both":
-            arquivos.append(
-                (
-                    pasta_destino / "comparacao.txt",
-                    exports.texto_comparacao(resultados[0], resultados[1]),
-                )
-            )
+        arquivos = [
+            (pasta_destino / nome, conteudo)
+            for nome, conteudo in exports.artefatos_at4(resultados, delimitador).items()
+        ]
         try:
             saidas_gravadas = _gravar_arquivos(arquivos, args.quiet)
         except OSError as exc:
@@ -494,45 +473,6 @@ def _executar_at4(args: argparse.Namespace) -> int:
         _emitir("".join(partes), args.ascii)
 
     return 0 if todos_ok else 2
-
-
-def _artefatos_at4_para_gravar(
-    pasta_destino: Path,
-    resultados,
-    metodo: str,
-    delimitador: str,
-    incluir_comparacao: bool,
-) -> list[tuple[Path, str]]:
-    arquivos: list[tuple[Path, str]] = []
-    for r in resultados:
-        if not r.ok:
-            continue
-        m = r.metodo
-        arquivos.extend([
-            (pasta_destino / f"alinhamento_{m}.txt", exports.relatorio_at4(r)),
-            (
-                pasta_destino / f"matriz_pontuacao_{m}.csv",
-                exports.csv_matriz_pontuacao(r, delimitador),
-            ),
-            (
-                pasta_destino / f"matriz_traceback_{m}.csv",
-                exports.csv_matriz_traceback(r, delimitador),
-            ),
-            (
-                pasta_destino / f"alinhamento_{m}.csv",
-                exports.csv_alinhamento(r, delimitador),
-            ),
-        ])
-    if incluir_comparacao and metodo == "both" and len(resultados) == 2 and all(
-        r.ok for r in resultados
-    ):
-        arquivos.append(
-            (
-                pasta_destino / "comparacao.txt",
-                exports.texto_comparacao(resultados[0], resultados[1]),
-            )
-        )
-    return arquivos
 
 
 def _resolver_pasta_all(
@@ -605,23 +545,9 @@ def _executar_all(args: argparse.Namespace) -> int:
     saidas_gravadas: list[str] = []
     if pasta_destino is not None:
         delimitador = "," if args.delimiter == "comma" else ";"
-        arquivos: list[tuple[Path, str]] = [
-            (pasta_destino / "relatorio_mestre.txt", exports.relatorio_fluxo(rf)),
-            (
-                pasta_destino / "at1_resultados.txt",
-                exports.csv_lote("at1", [rf.seq1.at1, rf.seq2.at1]),
-            ),
-            (
-                pasta_destino / "at2_resultados.txt",
-                exports.csv_lote("at2", [rf.seq1.at2, rf.seq2.at2]),
-            ),
-            (
-                pasta_destino / "at3_resultados.txt",
-                exports.csv_lote("at3", [rf.seq1.at3, rf.seq2.at3]),
-            ),
-            *_artefatos_at4_para_gravar(
-                pasta_destino, rf.alinhamentos, args.method, delimitador, True
-            ),
+        arquivos = [
+            (pasta_destino / nome, conteudo)
+            for nome, conteudo in exports.artefatos_fluxo(rf, delimitador).items()
         ]
         try:
             saidas_gravadas = _gravar_arquivos(arquivos, args.quiet)

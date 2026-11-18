@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}BioCompiler Studio{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+  <script src="/static/js/app.js" defer></script>
+</head>
+<body>
+  <header>
+    <nav aria-label="Navegação principal">
+      <a href="/">Laboratório Completo</a>
+      <a href="/at1">AT1 · Transcrição</a>
+      <a href="/at2">AT2 · Maturação</a>
+      <a href="/at3">AT3 · Tradução</a>
+      <a href="/at4">AT4 · Alinhamento</a>
+      <a href="/casos">Casos de Teste</a>
+      <a href="/historico">Histórico local</a>
+      <a href="/sobre">Sobre/Metodologia</a>
+    </nav>
+  </header>
+  {% block content %}{% endblock %}
+</body>
+</html>

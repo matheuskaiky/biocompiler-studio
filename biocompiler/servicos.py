@@ -57,3 +57,9 @@ def fluxo_completo(
     """Executa o fluxo integrado AT1→AT2→AT3 + AT4 via despacho preguiçoso."""
     fn = carregar_atividade("all")
     return fn(seq1, seq2, metodo, match, mismatch, gap)
+
+
+def inspecionar_celula(r, i: int, j: int):
+    """Delega ao núcleo AT4 (importação preguiçosa) os candidatos da célula (i, j)."""
+    modulo = importlib.import_module("biocompiler.core.at4")
+    return modulo.candidatos_celula(r, i, j)
