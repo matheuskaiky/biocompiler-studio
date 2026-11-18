@@ -254,3 +254,30 @@ html, body {
     animation-duration: 0.001ms !important;
   }
 }
+
+html[data-apresentacao="true"] .casca {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+html[data-apresentacao="true"] .barra-lateral {
+  display: none;
+}
+
+html[data-apresentacao="true"] .topo-esquerda h1 {
+  font-size: 32px;
+}
+
+html[data-apresentacao="true"] .conteudo {
+  max-width: 1440px;
+  font-size: 17px;
+}
+
+.rodape-apresentacao {
+  margin: 0 auto 16px;
+  padding: 10px 16px;
+  border-radius: var(--raio-controle);
+  border: 1px solid var(--borda);
+  background: var(--superficie);
+  font-size: 13px;
+  color: var(--texto-suave);
+}

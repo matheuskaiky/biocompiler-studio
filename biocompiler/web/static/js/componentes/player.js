@@ -159,12 +159,18 @@ export function criarPlayer(conteiner, callbacks = {}) {
       },
     });
 
+    const regValue = (reg, idx) => {
+      if (reg && reg.dados && reg.dados.metodo) return String(reg.dados.metodo);
+      if (reg && reg.entrada) return String(idx);
+      return String(idx);
+    };
+
     selReg = el("select", {
       "data-campo": "registro",
-      "aria-label": "Selecionar sequência do lote",
+      "aria-label": "Selecionar sequência ou método",
       onChange: () => {
-        const novoIdx = Number(selReg.value) || 0;
-        if (novoIdx !== indiceRegistro) {
+        const novoIdx = registros.findIndex((r, idx) => regValue(r, idx) === selReg.value);
+        if (novoIdx >= 0 && novoIdx !== indiceRegistro) {
           parar();
           indiceRegistro = novoIdx;
           if (callbacks.onTrocarRegistro) {
@@ -176,9 +182,12 @@ export function criarPlayer(conteiner, callbacks = {}) {
     registros.forEach((reg, idx) => {
       const linhaNum = reg.entrada && reg.entrada.linha ? reg.entrada.linha : idx + 1;
       const rot = reg.entrada && reg.entrada.rotulo ? ` (${reg.entrada.rotulo})` : "";
-      selReg.appendChild(el("option", { value: String(idx), text: `Linha ${linhaNum}${rot}` }));
+      const rotulo = reg.dados && reg.dados.metodo
+        ? String(reg.dados.metodo).toUpperCase()
+        : `Linha ${linhaNum}${rot}`;
+      selReg.appendChild(el("option", { value: regValue(reg, idx), text: rotulo }));
     });
-    selReg.value = String(indiceRegistro);
+    selReg.value = regValue(registros[indiceRegistro], indiceRegistro);
 
     regPasso = el("span", {
       class: "player-passo",
@@ -306,7 +315,12 @@ export function criarPlayer(conteiner, callbacks = {}) {
   function selecionarRegistro(idx) {
     parar();
     indiceRegistro = Math.max(0, Math.min(registros.length - 1, idx));
-    if (selReg) selReg.value = String(indiceRegistro);
+    if (selReg) {
+      const regSel = registros[indiceRegistro];
+      selReg.value = regSel && regSel.dados && regSel.dados.metodo
+        ? String(regSel.dados.metodo)
+        : String(indiceRegistro);
+    }
     const reg = registros[indiceRegistro];
     passos = (reg && reg.passos) || [];
     const modo = obterModoAtual();

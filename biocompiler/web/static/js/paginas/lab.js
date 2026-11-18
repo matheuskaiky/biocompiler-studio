@@ -3,74 +3,12 @@
 import { ativarAba, definirStatus, registrarHistorico } from "../app.js";
 import { executarAll, exportarZip, obterExemplos } from "../api.js";
 import { atualizarContadores, conectarZonaArquivo } from "../componentes/editor.js";
-import { renderizarSequencia } from "../componentes/sequencia.js";
+import { renderizarComparadorLab } from "../componentes/comparador_lab.js";
+import { renderizarMapaLab } from "../componentes/mapa_lab.js";
+import { criarLabMutacoes } from "../componentes/mutacoes_lab.js";
 import { el, limpar, qs } from "../dom.js";
 
 let textoArquivo = null;
-
-function renderizarCadeia(cadeia) {
-  const card = el("article", { class: "cartao" }, [
-    el("div", { class: "barra-ferramentas" }, [
-      el("h2", { text: cadeia.origem }),
-      el("span", {
-        class: `selo ${cadeia.ok ? "selo-ok" : "selo-erro"}`,
-        text: cadeia.ok ? "Cadeia OK" : `Falha em ${cadeia.etapa_falha}`,
-      }),
-    ]),
-    el("p", { class: "mono", text: `AT1: ${cadeia.at1.resultado}` }),
-  ]);
-  if (cadeia.at1.pre_mrna) {
-    card.appendChild(el("div", { class: "bloco-produto", text: `pré-mRNA: ${cadeia.at1.pre_mrna}` }));
-  }
-  if (cadeia.at2) {
-    card.appendChild(el("p", { class: "mono", text: `AT2: ${cadeia.at2.resultado}` }));
-    if (cadeia.at2.rna_processado) {
-      card.appendChild(el("div", { class: "bloco-produto", text: `RNA processado: ${cadeia.at2.rna_processado}` }));
-    }
-  } else {
-    card.appendChild(el("p", { class: "mono", text: "AT2: NÃO EXECUTADO" }));
-  }
-  if (cadeia.at3) {
-    card.appendChild(el("p", { class: "mono", text: `AT3: ${cadeia.at3.resultado}` }));
-    if (cadeia.at3.proteina) {
-      card.appendChild(el("div", { class: "bloco-produto", text: `Proteína: ${cadeia.at3.proteina}` }));
-    }
-  } else {
-    card.appendChild(el("p", { class: "mono", text: "AT3: NÃO EXECUTADO" }));
-  }
-  return card;
-}
-
-function renderizarComparador(conteiner, dados) {
-  limpar(conteiner);
-  const s1 = dados.seq1;
-  const s2 = dados.seq2;
-  const card = el("div", { class: "cartao" }, [
-    el("h2", { text: "Comparador molecular (Seq1 × Seq2)" }),
-    el("p", { text: "Diferenças observadas entre as duas amostras (sem diagnóstico clínico)." }),
-    el("div", { class: "grade-dupla" }, [
-      el("div", {}, [el("strong", { text: "Seq1 — DNA" }), renderizarSequencia(s1.dna)]),
-      el("div", {}, [el("strong", { text: "Seq2 — DNA" }), renderizarSequencia(s2.dna)]),
-    ]),
-  ]);
-  if (s1.at3 && s1.at3.proteina && s2.at3 && s2.at3.proteina) {
-    const p1 = s1.at3.aminoacidos || [];
-    const p2 = s2.at3.aminoacidos || [];
-    const diffs = [];
-    const maxLen = p1.length > p2.length ? p1.length : p2.length;
-    for (let i = 0; i < maxLen; i += 1) {
-      if (p1[i] !== p2[i]) {
-        diffs.push(`Posição ${i + 1}: ${p1[i] || "—"} × ${p2[i] || "—"} (diferença observada)`);
-      }
-    }
-    card.appendChild(el("h3", { text: "Proteínas comparadas" }));
-    card.appendChild(el("p", { class: "mono", text: `Seq1: ${s1.at3.proteina} | Seq2: ${s2.at3.proteina}` }));
-    card.appendChild(el("p", {
-      text: diffs.length ? diffs.join("; ") : "Nenhuma diferença observada nos aminoácidos.",
-    }));
-  }
-  conteiner.appendChild(card);
-}
 
 document.addEventListener("DOMContentLoaded", async () => {
   const s1El = qs('[data-campo="seq1"]');
@@ -104,6 +42,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     definirStatus(`Arquivo carregado: ${nome}`);
   });
 
+  const compVizEl = el("div", { class: "comp-viz-slot" });
+  const mutEl = el("div", { class: "comp-mut-slot" });
+  limpar(regComp);
+  regComp.appendChild(compVizEl);
+  regComp.appendChild(mutEl);
+
+  const mutacoesCtrl = criarLabMutacoes(mutEl, {
+    obterSeq: (alvo) => (alvo === "seq1" ? s1El.value : s2El.value),
+    definirSeq: (alvo, valor) => {
+      if (alvo === "seq1") s1El.value = valor;
+      else s2El.value = valor;
+      textoArquivo = null;
+      atualizar();
+    },
+    aoAlterar: () => executar(false),
+  });
+
   if (btnEx) {
     btnEx.addEventListener("click", async () => {
       try {
@@ -112,6 +67,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         s1El.value = ex.all.seq1;
         s2El.value = ex.all.seq2;
         atualizar();
+        mutacoesCtrl.limparOrigens();
         definirStatus("Exemplo integrado (SPEC §11.1) carregado.");
       } catch (err) {
         definirStatus(err.message, "erro");
@@ -125,6 +81,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       s1El.value = "";
       s2El.value = "";
       atualizar();
+      mutacoesCtrl.limparOrigens();
       definirStatus("Campos limpos.");
     });
   }
@@ -145,26 +102,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         gap: gapEl.value,
       });
       const d = resp.dados;
-      limpar(regRes);
-      regRes.appendChild(el("div", { class: "grade-dupla" }, [
-        renderizarCadeia(d.seq1),
-        renderizarCadeia(d.seq2),
-      ]));
-
-      const trilhaAt4 = el("div", { class: "cartao" }, [
-        el("h2", { text: "Alinhamento dos DNAs originais (AT4)" }),
-      ]);
-      for (const al of d.alinhamentos) {
-        trilhaAt4.appendChild(el("p", { class: "mono" }, [
-          `${al.metodo.toUpperCase()}: `,
-          al.ok ? "Score " : al.resultado,
-          al.ok ? el("strong", { "data-campo": "score", text: String(al.score) }) : "",
-          al.ok ? ` (Matches: ${al.matches}, Mismatches: ${al.mismatches}, Gaps: ${al.gaps})` : "",
-        ]));
-      }
-      regRes.appendChild(trilhaAt4);
-
-      renderizarComparador(regComp, d);
+      renderizarMapaLab(regRes, d);
+      renderizarComparadorLab(compVizEl, d);
 
       limpar(regRel);
       const resumoJson = {

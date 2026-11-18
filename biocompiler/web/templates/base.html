@@ -106,6 +106,15 @@
           <button
             type="button"
             class="btn"
+            data-acao="apresentacao"
+            aria-pressed="false"
+            aria-label="Modo apresentação"
+          >
+            Apresentação
+          </button>
+          <button
+            type="button"
+            class="btn"
             data-acao="tema"
             aria-label="Alternar tema escuro e claro"
           >
@@ -129,6 +138,7 @@
         </div>
         {% block content %}{% endblock %}
       </main>
+      <footer class="rodape-apresentacao" data-regiao="rodape-apresentacao" hidden></footer>
     </div>
   </div>
 

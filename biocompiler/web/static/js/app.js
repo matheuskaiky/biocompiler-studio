@@ -231,12 +231,99 @@ export function limparHistorico() {
   }
 }
 
+function inicializarApresentacao() {
+  const btn = qs('[data-acao="apresentacao"]');
+  const rodape = qs('[data-regiao="rodape-apresentacao"]');
+  if (!btn) return;
+
+  const atualizarRodape = (ativo) => {
+    if (!rodape) return;
+    rodape.hidden = !ativo;
+    if (!ativo) return;
+    const atalhos = [];
+    if (qs('[data-componente="player"]')) {
+      atalhos.push("←/→: passo", "Espaço: reproduzir/pausar", "F: resultado final");
+    }
+    if (qs('[data-acao="exportar"]')) {
+      atalhos.push("E: exportar .zip");
+    }
+    atalhos.push("Esc: sair");
+    rodape.textContent = `Modo apresentação · ${atalhos.join(" · ")}`;
+  };
+
+  const sair = () => {
+    document.documentElement.removeAttribute("data-apresentacao");
+    btn.setAttribute("aria-pressed", "false");
+    atualizarRodape(false);
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    } catch (e) {
+      // ignora
+    }
+  };
+
+  const entrar = () => {
+    document.documentElement.setAttribute("data-apresentacao", "true");
+    btn.setAttribute("aria-pressed", "true");
+    atualizarRodape(true);
+    try {
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    } catch (e) {
+      // ignora indisponibilidade de fullscreen em headless
+    }
+  };
+
+  btn.addEventListener("click", () => {
+    if (document.documentElement.getAttribute("data-apresentacao") === "true") {
+      sair();
+    } else {
+      entrar();
+    }
+  });
+
+  document.addEventListener("keydown", (ev) => {
+    if (document.documentElement.getAttribute("data-apresentacao") !== "true") return;
+    const ativo = document.activeElement;
+    const tag = ativo ? ativo.tagName : "";
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (ativo && ativo.isContentEditable)) {
+      if (ev.key === "Escape") sair();
+      return;
+    }
+    if (ev.key === "Escape") {
+      ev.preventDefault();
+      sair();
+      return;
+    }
+    if (ev.key === "ArrowRight") {
+      const b = qs('[data-componente="player"] [data-acao="proximo"]');
+      if (b) { ev.preventDefault(); b.click(); }
+    } else if (ev.key === "ArrowLeft") {
+      const b = qs('[data-componente="player"] [data-acao="anterior"]');
+      if (b) { ev.preventDefault(); b.click(); }
+    } else if (ev.key === " ") {
+      const b = qs('[data-componente="player"] [data-acao="reproduzir"]');
+      if (b) { ev.preventDefault(); b.click(); }
+    } else if (ev.key === "f" || ev.key === "F") {
+      const b = qs('[data-componente="player"] [data-acao="fim"]');
+      if (b) { ev.preventDefault(); b.click(); }
+    } else if (ev.key === "e" || ev.key === "E") {
+      const b = qs('[data-acao="exportar"]');
+      if (b) { ev.preventDefault(); b.click(); }
+    }
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   inicializarTema();
   inicializarMenu();
   inicializarModo();
   inicializarAjuda();
   inicializarAbas();
+  inicializarApresentacao();
   const params = new URLSearchParams(window.location.search);
   const abaParam = params.get("aba");
   if (abaParam) ativarAbaPorNome(abaParam);

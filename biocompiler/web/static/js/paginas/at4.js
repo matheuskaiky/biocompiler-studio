@@ -3,9 +3,10 @@
 import { ativarAba, definirStatus, registrarHistorico } from "../app.js";
 import { executarAt4, exportarZip, obterExemplos } from "../api.js";
 import { atualizarContadores, conectarZonaArquivo } from "../componentes/editor.js";
-import { renderizarEtapas } from "../componentes/etapas.js";
+import { criarEtapas } from "../componentes/etapas.js";
 import { renderizarListaArtefatos } from "../componentes/exportacao.js";
-import { renderizarMatrizAT4 } from "../componentes/matriz.js";
+import { criarPlayer } from "../componentes/player.js";
+import { criarVizAT4 } from "../componentes/viz_at4.js";
 import { el, limpar, qs } from "../dom.js";
 
 let textoArquivo = null;
@@ -115,6 +116,50 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
+  let itensAtuais = [];
+  let etapasCtrl = null;
+  let playerCtrl = null;
+  let vizCtrl = null;
+
+  function prepararPalcoAT4(itensOk) {
+    if (!regVis || !regEtapas) return;
+    regVis.classList.remove("vazio");
+    limpar(regVis);
+    const slotPlayer = el("div");
+    const slotViz = el("div");
+    regVis.appendChild(slotPlayer);
+    regVis.appendChild(slotViz);
+
+    const paramsScore = {
+      match: maEl.value,
+      mismatch: miEl.value,
+      gap: gapEl.value,
+    };
+    vizCtrl = criarVizAT4(slotViz);
+    etapasCtrl = criarEtapas(regEtapas, (novoK) => {
+      if (playerCtrl) playerCtrl.irPara(novoK);
+    });
+    playerCtrl = criarPlayer(slotPlayer, {
+      onTrocarRegistro: (idx) => {
+        const env = itensAtuais[idx];
+        if (!env) return;
+        etapasCtrl.definirDados(env.passos, `Eventos — ${env.dados.metodo}`, 1);
+        vizCtrl.definirAlinhamento(env, paramsScore);
+        playerCtrl.selecionarRegistro(idx);
+      },
+      onPasso: (k, passos) => {
+        if (vizCtrl) vizCtrl.atualizar(k, passos);
+        if (etapasCtrl) etapasCtrl.atualizarPasso(k);
+      },
+    });
+
+    itensAtuais = itensOk;
+    const primeiro = itensOk[0];
+    etapasCtrl.definirDados(primeiro.passos, `Eventos — ${primeiro.dados.metodo}`, 1);
+    vizCtrl.definirAlinhamento(primeiro, paramsScore);
+    playerCtrl.definirRegistros(itensOk, 0);
+  }
+
   async function executar(selecionarAba = true) {
     const base = textoArquivo !== null
       ? { texto: textoArquivo }
@@ -132,21 +177,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       const itens = await executarAt4(payload);
       renderizarResultadosAT4(regRes, itens);
-      if (itens.length && regEtapas) {
-        renderizarEtapas(regEtapas, itens[0].passos, `Eventos — ${itens[0].dados.metodo}`);
-      }
-      if (regVis) {
-        limpar(regVis);
-        for (const item of itens) {
-          if (item.status === "OK") {
-            renderizarMatrizAT4(regVis, item, {
-              seq1: item.dados.seq1,
-              seq2: item.dados.seq2,
-              match: maEl.value,
-              mismatch: miEl.value,
-              gap: gapEl.value,
-            });
-          }
+      const itensOk = itens.filter((i) => i.status === "OK");
+      if (itensOk.length) {
+        prepararPalcoAT4(itensOk);
+      } else {
+        if (regEtapas && itens.length) {
+          criarEtapas(regEtapas, null).definirDados(itens[0].passos, `Eventos — ${itens[0].dados.metodo}`, 1);
+        }
+        if (regVis) {
+          limpar(regVis);
+          regVis.appendChild(el("div", { class: "vazio", text: "Sem matriz para exibir devido a erro na entrada." }));
         }
       }
       const ok = itens.every((i) => i.status === "OK");
