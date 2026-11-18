@@ -427,12 +427,17 @@ class TestIsolamentoDinamico(unittest.TestCase):
             "import types\n"
             "sys.modules['jinja2'] = types.ModuleType('jinja2')\n"
             "from biocompiler.__main__ import main\n"
-            "codigo = main(['serve', '--port', '9000'])"
+            "codigo = main(['serve', '--port', 'abc'])"
         )
+        # M7 (D018): `serve` despacha para o webserver, que valida os argumentos
+        # antes de usar o Jinja2 (aqui um módulo vazio) e falha com código 1,
+        # sem carregar a CLI nem as ATs.
         self.assertIn("biocompiler.webserver", r["carregados"])
         self.assertNotIn("biocompiler.cli", r["carregados"])
+        for at in ATS:
+            self.assertNotIn(f"biocompiler.core.{at}", r["carregados"])
         self.assertEqual(r["codigo"], 1)
-        self.assertIn("marco M7", r["stderr"])
+        self.assertIn("usage:", r["stderr"])
 
     def test_outros_comandos_funcionam_sem_jinja2(self):
         # M5/M6 (D015, D017): sem entrada, at1–at4 e `all` falham com código 1
