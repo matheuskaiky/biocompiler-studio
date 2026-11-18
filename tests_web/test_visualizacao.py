@@ -119,6 +119,7 @@ class BaseViz(unittest.TestCase):
 
     def tecla(self, nome):
         codigos = {"ArrowRight": 39, "ArrowLeft": 37, "Home": 36, "End": 35, " ": 32,
+                   "PageUp": 33, "PageDown": 34, "ArrowUp": 38, "ArrowDown": 40, "Tab": 9,
                    "Enter": 13}
         code = {" ": "Space", "Enter": "Enter"}.get(nome, nome)
         for tipo in ("rawKeyDown", "char", "keyUp"):
