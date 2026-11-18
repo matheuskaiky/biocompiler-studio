@@ -121,6 +121,34 @@ class TestAT1Movimento(BaseCoreo):
                          "maduro")
 
 
+class TestAT1Velocidade(BaseCoreo):
+    """R1 (achado A1 do laudo): as animações didáticas seguem a velocidade do player."""
+
+    def duracoes_em_curso(self):
+        return self.js("document.getAnimations().filter(a => a.playState === 'running' &&"
+                       " a.effect && a.effect.target && a.effect.target.closest &&"
+                       " a.effect.target.closest('[data-viz=at1]'))"
+                       ".map(a => a.effect.getTiming().duration)")
+
+    def test_animacoes_cabem_no_passo_do_player(self):
+        for vel, limite in (("1", 800), ("4", 200)):
+            self.executar("/at1", {"seq": DNA_OK, "modo": "guiado"})
+            self.js("(() => { const s = document.querySelector('[data-componente=player] "
+                    f"select[data-campo=velocidade]'); s.value = '{vel}';"
+                    " s.dispatchEvent(new Event('change', {bubbles: true})); return true; })()")
+            maximo = 0
+            for _ in range(5):
+                self.js("document.querySelector('[data-componente=player] [data-acao=proximo]').click(), true")
+                self.pausa(30)
+                d = self.duracoes_em_curso()
+                maximo = max([maximo] + [x for x in d if isinstance(x, (int, float))])
+                self.assentar()
+            with self.subTest(velocidade=vel):
+                self.assertGreater(maximo, 0, "há animação didática ao avançar")
+                self.assertLessEqual(maximo, limite,
+                                     f"a {vel}× nenhuma animação passa do intervalo do passo ({limite} ms)")
+
+
 class TestAT1Transcricao(BaseCoreo):
     def test_pre_mrna_nasce_da_fita_com_correspondencia_posicional(self):
         r = servicos.processar_lote("at1", [DNA_OK])[0]
