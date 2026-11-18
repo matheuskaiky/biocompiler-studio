@@ -420,7 +420,11 @@ class TestMovimentoELimites(BaseAT4):
         b = "".join(rnd.choice("ACGT") for _ in range(1000))
         r = alinhar("global", a, b)
         self.abrir_at4("rapido", metodo="global", s1=a, s2=b)
-        aviso = self.texto("[data-viz=at4] [data-regiao=aviso-matriz]")
+        for _ in range(60):  # resposta de ~34 MB: aguarda a renderização (asserção inalterada)
+            aviso = self.texto("[data-viz=at4] [data-regiao=aviso-matriz]")
+            if aviso:
+                break
+            self.pausa(500)
         self.assertIn(str(1101 * 1001), aviso.replace(".", "").replace(" ", "").replace(" ", ""))
         self.assertIn(f"Score", self.texto("[data-viz=at4]"))
         self.assertIn(str(r.score), self.texto("[data-viz=at4]"))
