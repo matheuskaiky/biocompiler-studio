@@ -14,6 +14,7 @@ Executar: python -m unittest discover -s tests_web -v
 
 import html.parser
 import os
+import random
 import re
 import shutil
 import subprocess
@@ -26,6 +27,8 @@ from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ))
+from biocompiler.core.at1 import transcrever_dna  # noqa: E402
+from biocompiler.core.at4 import alinhar_dna  # noqa: E402
 
 try:
     import jinja2  # noqa: F401
@@ -131,6 +134,9 @@ class TestEstrutura(Base):
                 self.assertEqual(len(navs), 1)
                 atuais = [e for e in a.todos("a") if e["attrs"].get("aria-current") == "page"]
                 self.assertEqual([e["attrs"]["href"] for e in atuais], [caminho])
+                ajuda = a.todos("button", data_acao="ajuda")
+                self.assertEqual(len(ajuda), 1)
+                self.assertEqual(ajuda[0]["attrs"].get("aria-haspopup"), "dialog")
                 tema = a.todos("button", data_acao="tema")
                 self.assertEqual(len(tema), 1)
                 self.assertTrue(tema[0]["attrs"].get("aria-label"))
@@ -188,6 +194,8 @@ class TestEstrutura(Base):
                     self.assertGreaterEqual(len(arquivos), 1)
                     for f in arquivos:
                         self.assertIn(".txt", f["attrs"].get("accept", ""))
+                        if caminho in ("/", "/at4"):
+                            self.assertIn(".fasta", f["attrs"].get("accept", ""))
                     regioes = [e for e in a.elementos
                                if e["attrs"].get("data-regiao") == "resultados"]
                     self.assertEqual(len(regioes), 1)
@@ -253,6 +261,17 @@ CHROME = _chrome()
 class TestPontaAPonta(Base):
     """Links profundos: ?...&executar=1 preenche, executa via API e mostra o resultado."""
 
+    def dom_inteiro(self, caminho, params=None):
+        url = f"http://127.0.0.1:{self.porta}{caminho}"
+        if params:
+            url += "?" + urllib.parse.urlencode(params)
+        proc = subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--no-first-run",
+                               "--no-default-browser-check", "--virtual-time-budget=8000",
+                               "--dump-dom", url], capture_output=True, timeout=120)
+        dom = proc.stdout.decode("utf-8", "replace")
+        self.assertIn("</html>", dom, proc.stderr[-500:])
+        return dom
+
     def dom(self, caminho, params):
         url = f"http://127.0.0.1:{self.porta}{caminho}?{urllib.parse.urlencode(params)}"
         proc = subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--no-first-run",
@@ -284,6 +303,62 @@ class TestPontaAPonta(Base):
         r = self.dom("/", {"seq1": SEQ1, "seq2": SEQ2, "executar": "1"})
         self.assertIn("Met-Ala-Lys-Pro", r)
         self.assertIn("Met-Ala-Asn-Pro", r)
+
+    def test_paridade_com_entrada_aleatoria(self):
+        # A2: entradas geradas na hora; o resultado só pode vir da API.
+        rnd = random.Random()
+        miolo = "".join(rnd.choice("ACG") for _ in range(rnd.randint(6, 12)))  # sem T: sem STOP extra
+        dna = "CC" + "ATG" + "".join(rnd.choice(["GCT", "AAA", "CCG", "GGC", "CAC"])
+                                     for _ in range(rnd.randint(3, 7))) + "TAA" + miolo
+        r1 = transcrever_dna(dna)
+        self.assertTrue(r1.ok)
+        r = self.dom("/at1", {"seq": dna, "executar": "1"})
+        self.assertIn(r1.pre_mrna, r)
+        s1 = "".join(rnd.choice("ACGT") for _ in range(rnd.randint(6, 14)))
+        s2 = "".join(rnd.choice("ACGT") for _ in range(rnd.randint(6, 14)))
+        p = {"match": rnd.randint(2, 5), "mismatch": -rnd.randint(1, 3), "gap": -rnd.randint(2, 4)}
+        r = self.dom("/at4", {"seq1": s1, "seq2": s2, "metodo": "both", **p, "executar": "1"})
+        scores = re.findall(r'data-campo="score"[^>]*>\s*(-?\d+)\s*<', r)
+        esperado = [str(alinhar_dna(s1, s2, m, p["match"], p["mismatch"], p["gap"]).score)
+                    for m in ("local", "global")]
+        self.assertEqual(scores, esperado)
+
+    def test_aba_por_parametro(self):
+        dom = self.dom_inteiro("/at4", {"aba": "etapas"})
+        abas = re.findall(r'<button[^>]*role="tab"[^>]*>', dom)
+        selecionadas = [a for a in abas if 'aria-selected="true"' in a]
+        self.assertEqual(len(selecionadas), 1)
+        i = dom.find(selecionadas[0])
+        self.assertIn("Etapas", dom[i:i + len(selecionadas[0]) + 200])
+
+    def test_casos_de_teste_clicaveis(self):
+        # A1: os cartões vêm de /api/exemplos e apontam para links profundos executáveis.
+        dom = self.dom_inteiro("/casos")
+        links = re.findall(r'href="(/[^"]*executar=1[^"]*)"', dom)
+        por_pagina = {}
+        for href in links:
+            por_pagina[urllib.parse.urlsplit(href).path] = por_pagina.get(
+                urllib.parse.urlsplit(href).path, 0) + 1
+        self.assertEqual(por_pagina.get("/at1"), 6)
+        self.assertEqual(por_pagina.get("/at2"), 4)
+        self.assertEqual(por_pagina.get("/at3"), 6)
+        self.assertGreaterEqual(por_pagina.get("/at4", 0), 1)
+        self.assertGreaterEqual(por_pagina.get("/", 0), 1)
+
+    def test_historico_e_sobre(self):
+        dom = self.dom_inteiro("/historico")
+        for acao in ("exportar-historico", "limpar-historico"):
+            self.assertIn(f'data-acao="{acao}"', dom)
+        self.assertIn("Nenhum experimento nesta sessão", dom)
+        dom = self.dom_inteiro("/sobre")
+        for termo in ("AT1", "AT2", "AT3", "AT4", "Smith", "Needleman", "Privacidade"):
+            self.assertIn(termo, dom)
+
+    def test_tabela_genetica_da_api(self):
+        dom = self.dom_inteiro("/at3")
+        codons = set(re.findall(r'data-codon="([ACGU]{3})"', dom))
+        self.assertEqual(len(codons), 64)
+        self.assertIn('data-campo="filtro-codon"', dom)
 
     def test_tema_claro_por_parametro(self):
         url = f"http://127.0.0.1:{self.porta}/sobre?tema=claro"
