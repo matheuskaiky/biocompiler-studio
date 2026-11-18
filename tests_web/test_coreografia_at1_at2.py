@@ -27,8 +27,20 @@ class BaseCoreo(BaseViz):
     def caixa(self, sel):
         return self.js(f"({RET})({sel!r})")
 
-    def assentar(self, ms=650):
-        self.pausa(ms)
+    def assentar(self, ms=4000):
+        """Espera até não haver animações finitas em execução (no máximo `ms`)."""
+        for _ in range(ms // 100):
+            n = self.js("document.getAnimations().filter(a => a.playState === 'running'"
+                        " && a.effect && a.effect.getTiming().iterations !== Infinity).length")
+            if n == 0:
+                break
+            self.pausa(100)
+        self.pausa(60)
+
+    def duracao_ms(self, sel):
+        return self.js(f"(() => {{ const c = getComputedStyle(document.querySelector({sel!r}));"
+                       " return Math.max(...c.transitionDuration.split(',').map(x => parseFloat(x) *"
+                       " (x.trim().endsWith('ms') ? 1 : 1000))); })()")
 
 
 class TestAT1Cursor(BaseCoreo):
@@ -37,8 +49,9 @@ class TestAT1Cursor(BaseCoreo):
         self.executar("/at1", {"seq": DNA_OK, "modo": "guiado"})
         cur = "[data-viz=at1] [data-cursor]"
         self.assertIsNotNone(self.caixa(cur), "cursor científico [data-cursor] ausente")
-        self.assertIn("transform", self.caixa(cur)["trans"] + " all",
-                      "o cursor desliza (transição de transform)")
+        self.assertTrue(any(t in self.caixa(cur)["trans"] for t in ("transform", "all", "left")),
+                        "o cursor desliza (transição de posição)")
+        self.assertTrue(120 <= self.duracao_ms(cur) <= 900, "duração de deslize entre 120 e 900 ms")
         for k, ev in enumerate(r.eventos, start=1):
             if k > 1:
                 self.clicar("proximo")
@@ -66,6 +79,48 @@ class TestAT1Cursor(BaseCoreo):
         self.assertEqual(self.contar("[data-viz=at1] [data-codon]"), len(r.codons))
 
 
+class TestAT1Movimento(BaseCoreo):
+    def test_cursor_desliza_em_vez_de_saltar(self):
+        r = servicos.processar_lote("at1", [DNA_OK])[0]
+        tipos = [e.tipo for e in r.eventos]
+        self.executar("/at1", {"seq": DNA_OK, "modo": "guiado"})
+        k = tipos.index("CODON_LIDO") + 1          # primeiro códon lido
+        self.ir_para(k)
+        self.assentar()
+        cur = "[data-viz=at1] [data-cursor]"
+        x0 = self.caixa(cur)["x"]
+        self.js("document.querySelector('[data-componente=player] [data-acao=proximo]').click(), true")
+        self.pausa(40)
+        x_meio = self.caixa(cur)["x"]
+        self.assentar()
+        x1 = self.caixa(cur)["x"]
+        self.assertGreater(abs(x1 - x0), 20, "o próximo códon está a 3 bases")
+        self.assertTrue(min(x0, x1) + 1 < x_meio < max(x0, x1) - 1 or abs(x_meio - x0) < 1,
+                        f"em 40 ms o cursor está a caminho (x0={x0}, meio={x_meio}, x1={x1})")
+        self.assertNotAlmostEqual(x_meio, x1, delta=1, msg="não pode saltar direto ao destino")
+
+    def test_movimento_reduzido_e_pular_sao_instantaneos(self):
+        r = servicos.processar_lote("at1", [DNA_OK])[0]
+        tipos = [e.tipo for e in r.eventos]
+        self.executar("/at1", {"seq": DNA_OK, "modo": "guiado"}, reduzir_movimento=True)
+        self.ir_para(tipos.index("CODON_LIDO") + 1)
+        self.js("document.querySelector('[data-componente=player] [data-acao=proximo]').click(), true")
+        self.pausa(50)
+        ev = r.eventos[tipos.index("CODON_LIDO") + 1]
+        c = self.caixa("[data-viz=at1] [data-cursor]")
+        b = self.caixa(f"[data-viz=at1] [data-fita=dna] [data-base][data-indice=\"{ev.posicao}\"]")
+        self.assertLessEqual(abs(c["x"] - b["x"]), 2, "movimento reduzido: já no destino")
+        self.executar("/at2", {"seq": PRE_OK, "modo": "animado"})
+        self.pausa(300)
+        self.js("document.querySelector('[data-componente=player] [data-acao=fim]').click(), true")
+        self.pausa(120)
+        rodando = self.js("document.getAnimations().filter(a => a.playState === 'running'"
+                          " && a.effect && a.effect.getTiming().iterations !== Infinity).length")
+        self.assertEqual(rodando, 0, "pular encerra as coreografias")
+        self.assertEqual(self.js("document.querySelector('[data-viz=at2]').getAttribute('data-estado')"),
+                         "maduro")
+
+
 class TestAT1Transcricao(BaseCoreo):
     def test_pre_mrna_nasce_da_fita_com_correspondencia_posicional(self):
         r = servicos.processar_lote("at1", [DNA_OK])[0]
@@ -74,8 +129,19 @@ class TestAT1Transcricao(BaseCoreo):
         self.ir_para(tipos.index("T_PARA_U"))
         self.assertEqual(self.contar("[data-viz=at1] [data-fita=pre-mrna] [data-base]"), 0,
                          "antes de T_PARA_U não há pré-mRNA")
-        self.clicar("proximo")  # T_PARA_U
-        self.assentar(900)
+        y_dna = self.js("document.querySelector('[data-viz=at1] [data-fita=dna] [data-base]')"
+                        ".getBoundingClientRect().top")
+        self.js("document.querySelector('[data-componente=player] [data-acao=proximo]').click(), true")
+        self.pausa(30)
+        y_ini = self.js("(() => { const b = document.querySelector('[data-viz=at1] "
+                        "[data-fita=pre-mrna] [data-base]'); return b ? b.getBoundingClientRect().top : null; })()")
+        self.assentar()
+        y_fim = self.js("document.querySelector('[data-viz=at1] [data-fita=pre-mrna] [data-base]')"
+                        ".getBoundingClientRect().top")
+        self.assertIsNotNone(y_ini)
+        self.assertGreater(y_fim, y_dna, "o pré-mRNA termina abaixo do DNA")
+        self.assertLess(abs(y_ini - y_dna), abs(y_fim - y_dna) - 2,
+                        "o pré-mRNA nasce da fita de DNA e desce (continuidade)")
         xs = self.js("(() => { const d = Array.from(document.querySelectorAll('[data-viz=at1] "
                      "[data-fita=dna] [data-base]')).map(e => [+e.getAttribute('data-indice'),"
                      " e.getBoundingClientRect().left]); const p = Array.from(document.querySelectorAll("
