@@ -30,7 +30,7 @@
   justify-content: center;
   gap: 8px;
   padding: 8px 14px;
-  border-radius: var(--raio-controle);
+  border-radius: var(--raio-pilula);
   border: 1px solid var(--borda);
   background: var(--superficie-alt);
   color: var(--texto);
@@ -87,6 +87,10 @@
   font-size: 12px;
 }
 
+button.codon-grupo {
+  border-radius: var(--raio-pilula);
+}
+
 .seletor-inline {
   display: inline-flex;
   align-items: center;
@@ -95,10 +99,25 @@
   color: var(--texto-suave);
 }
 
-.controle, textarea, input[type="text"], input[type="number"], select {
+.controle, textarea {
   width: 100%;
   padding: 9px 12px;
   border-radius: var(--raio-controle);
+  border: 1px solid var(--borda);
+  background: var(--fundo-elevado);
+  color: var(--texto);
+  font-family: var(--fonte-ui);
+  font-size: 14px;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="search"],
+input:not([type]),
+select {
+  width: 100%;
+  padding: 9px 14px;
+  border-radius: var(--raio-pilula);
   border: 1px solid var(--borda);
   background: var(--fundo-elevado);
   color: var(--texto);
@@ -220,7 +239,7 @@ textarea.editor-seq {
 .barra-status {
   min-height: 24px;
   padding: 8px 14px;
-  border-radius: var(--raio-controle);
+  border-radius: var(--raio-pilula);
   border: 1px solid var(--borda);
   background: var(--superficie);
   font-size: 13px;
@@ -241,7 +260,7 @@ textarea.editor-seq {
   flex-wrap: wrap;
   gap: 3px;
   padding: 4px;
-  border-radius: var(--raio-medio);
+  border-radius: var(--raio-pilula);
   background: var(--superficie-elevada);
   border: 1px solid var(--separador);
   max-width: 100%;
@@ -249,7 +268,7 @@ textarea.editor-seq {
 
 .aba-btn {
   padding: 6px 12px;
-  border-radius: var(--raio-pequeno);
+  border-radius: var(--raio-pilula);
   border: 1px solid transparent;
   background: transparent;
   color: var(--texto-secundario);
@@ -1403,7 +1422,7 @@ pre.mono::-webkit-scrollbar-thumb:hover,
   align-items: center;
   gap: 2px;
   padding: 2px;
-  border-radius: var(--raio-medio);
+  border-radius: var(--raio-pilula);
   background: var(--superficie-elevada);
   border: 1px solid var(--separador);
 }
@@ -1413,7 +1432,7 @@ pre.mono::-webkit-scrollbar-thumb:hover,
   top: 2px;
   bottom: 2px;
   left: 0;
-  border-radius: calc(var(--raio-medio) - 2px);
+  border-radius: var(--raio-pilula);
   background: var(--superficie);
   border: 1px solid var(--separador);
   box-shadow: var(--elevacao-1);
@@ -1428,7 +1447,7 @@ pre.mono::-webkit-scrollbar-thumb:hover,
   z-index: 1;
   padding: 5px 10px;
   border: 0;
-  border-radius: calc(var(--raio-medio) - 2px);
+  border-radius: var(--raio-pilula);
   background: transparent;
   color: var(--texto-secundario);
   font-family: var(--fonte-ui);

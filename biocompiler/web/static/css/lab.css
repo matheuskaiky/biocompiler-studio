@@ -19,7 +19,7 @@
   flex-wrap: wrap;
   gap: 3px;
   padding: 3px;
-  border-radius: var(--raio-medio, 10px);
+  border-radius: var(--raio-pilula, 999px);
   background: var(--superficie-elevada, #212428);
   border: 1px solid var(--separador, rgba(255, 255, 255, 0.12));
 }
@@ -29,7 +29,7 @@
   z-index: 1;
   padding: 6px 12px;
   border: 1px solid transparent;
-  border-radius: var(--raio-pequeno, 6px);
+  border-radius: var(--raio-pilula, 999px);
   background: transparent;
   color: var(--texto-secundario, #b4b8c0);
   font-family: var(--fonte-ui, system-ui, sans-serif);
