@@ -435,15 +435,15 @@ class TestIsolamentoDinamico(unittest.TestCase):
         self.assertIn("marco M7", r["stderr"])
 
     def test_outros_comandos_funcionam_sem_jinja2(self):
-        # M5 (D015): sem entrada, at1–at4 falham com código 1 antes de carregar
-        # qualquer AT; `all` segue provisório (3) até o M6; `examples` e
+        # M5/M6 (D015, D017): sem entrada, at1–at4 e `all` falham com código 1
+        # antes de carregar qualquer AT; `examples` e
         # `test --help` funcionam. `test` sem argumentos não é chamado aqui
         # porque executaria esta própria suíte.
         casos = [(["at1"], 1, "informe --input ou --seq"),
                  (["at2"], 1, "informe --input ou --seq"),
                  (["at3"], 1, "informe --input ou --seq"),
                  (["at4"], 1, "informe --input ou --seq1 e --seq2"),
-                 (["all"], 3, "comando 'all' ainda não implementado"),
+                 (["all"], 1, "informe --input ou --seq1 e --seq2"),
                  (["examples"], 0, ""),
                  (["test", "--help"], 0, "")]
         for argv, codigo, mensagem in casos:
