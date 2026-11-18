@@ -769,8 +769,13 @@ class TestParidadeAleatoria(BaseViz):
             r = servicos.processar_lote("at3", [seq])[0]
             self.executar("/at3", {"seq": seq, "modo": "rapido"})
             with self.subTest(seq=seq):
-                aa = self.js("Array.from(document.querySelectorAll('[data-viz=at3] [data-cadeia] "
-                             "[data-aminoacido]')).map(e => e.textContent.trim())")
+                consulta = ("Array.from(document.querySelectorAll('[data-viz=at3] [data-cadeia] "
+                            "[data-aminoacido]')).map(e => e.textContent.trim())")
+                for _ in range(20):  # aguarda a renderização (sem afrouxar a asserção)
+                    aa = self.js(consulta)
+                    if aa:
+                        break
+                    self.pausa(150)
                 self.assertEqual(aa, list(r.aminoacidos))
                 marcados = self.js("Array.from(document.querySelectorAll("
                                    "'[data-codon].percorrido')).map(e => "

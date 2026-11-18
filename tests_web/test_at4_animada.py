@@ -467,6 +467,27 @@ class TestAcabamentoVisual(BaseAT4):
         self.assertIn("Matriz completa", t)
 
 
+class TestVisibilidadePreenchimento(BaseAT4):
+    """R2: o subcontrole de preenchimento só aparece no passo MATRIZ_PREENCHIDA."""
+
+    def visivel(self):
+        return self.js("(() => { const e = document.querySelector("
+                       "'[data-componente=preenchimento]'); if (!e) return false;"
+                       " const r = e.getBoundingClientRect(); const c = getComputedStyle(e);"
+                       " return c.display !== 'none' &&"
+                       " c.visibility !== 'hidden' && r.width > 0 && r.height > 0; })()")
+
+    def test_aparece_somente_no_passo_de_preenchimento(self):
+        self.abrir_at4("guiado", metodo="global")
+        self.assertFalse(self.visivel(), "passo 1 (BORDA_INICIALIZADA)")
+        self.clicar("proximo")
+        self.assertTrue(self.visivel(), "passo MATRIZ_PREENCHIDA")
+        self.clicar("proximo")
+        self.assertFalse(self.visivel(), "passo INICIO_TRACEBACK")
+        self.clicar("fim")
+        self.assertFalse(self.visivel(), "passo final")
+
+
 class TestSemRecorrenciaNoJS(unittest.TestCase):
     def test_js_nao_aplica_a_recorrencia(self):
         raiz = Path(__file__).resolve().parents[1] / "biocompiler" / "web" / "static" / "js"
