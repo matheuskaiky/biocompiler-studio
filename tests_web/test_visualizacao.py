@@ -254,7 +254,7 @@ class TestAT1Viz(BaseViz):
         self.executar("/at1", {"seq": DNA_OK, "modo": "rapido"})
         self.assertEqual(self.js("document.querySelectorAll('[data-viz=at1] svg').length > 0"),
                          True, "AT1 deve desenhar a fita em SVG")
-        self.assertEqual(self.contar("[data-viz=at1] [data-base]"), len(DNA_OK))
+        self.assertEqual(self.contar("[data-viz=at1] [data-fita=dna] [data-base]"), len(DNA_OK))
         self.assertEqual(self.atributos("[data-viz=at1] [data-marca=start]", "data-indice"),
                          [str(r.posicao_start)])
         self.assertEqual(self.atributos("[data-viz=at1] [data-marca=stop]", "data-indice"),
