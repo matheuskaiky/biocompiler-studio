@@ -1,6 +1,9 @@
 import { el, limpar } from "../dom.js";
 import { movimentoReduzido } from "../app.js";
 import { criarInspetor } from "./inspetor.js";
+import { criarVizAT1 } from "./viz_at1.js";
+import { criarVizAT2 } from "./viz_at2.js";
+import { criarVizAT3 } from "./viz_at3.js";
 
 const LIMITE_JANELA = 600;
 
@@ -48,7 +51,7 @@ function extrairMarcasAt3(at3) {
   return marcas;
 }
 
-function criarBlocoFase(faseId, titulo, faseObj, campoProduto, sequenciaCtx, marcas, aoInspecionar) {
+function criarBlocoFase(chave, faseId, titulo, faseObj, campoProduto, sequenciaCtx, marcas, aoInspecionar, aoDetalhar) {
   if (!faseObj) {
     return el("article", {
       class: "mapa-fase mapa-fase-nao-executada",
@@ -66,6 +69,14 @@ function criarBlocoFase(faseId, titulo, faseObj, campoProduto, sequenciaCtx, mar
     ]);
   }
 
+  const btnDetalhar = el("button", {
+    type: "button",
+    class: "btn btn-pequeno",
+    "data-acao": "detalhar",
+    text: "Detalhar",
+  });
+  btnDetalhar.addEventListener("click", () => aoDetalhar(chave, faseId, titulo, faseObj, sequenciaCtx, btnDetalhar));
+
   if (!faseObj.ok) {
     return el("article", {
       class: "mapa-fase mapa-fase-erro",
@@ -77,6 +88,7 @@ function criarBlocoFase(faseId, titulo, faseObj, campoProduto, sequenciaCtx, mar
         el("span", { class: "selo selo-erro", text: faseObj.status || "ERRO" }),
       ]),
       el("p", { class: "mapa-fase-msg mono", text: faseObj.resultado || "Erro na etapa" }),
+      el("div", { class: "mapa-fase-acoes" }, [btnDetalhar]),
     ]);
   }
 
@@ -110,12 +122,13 @@ function criarBlocoFase(faseId, titulo, faseObj, campoProduto, sequenciaCtx, mar
     botoesMarcas.length > 0
       ? el("div", { class: "mapa-marcas" }, botoesMarcas)
       : el("p", { class: "ajuda", text: "Sem marcos posicionais nesta etapa." }),
+    el("div", { class: "mapa-fase-acoes" }, [btnDetalhar]),
   ]);
 }
 
-function criarTrilhaCadeia(chave, titulo, cadeia, aoInspecionar) {
+function criarTrilhaCadeia(chave, titulo, cadeia, aoInspecionar, aoDetalhar) {
   const attrs = {
-    class: `cartao mapa-trilha ${cadeia.ok ? "mapa-trilha-ok" : "mapa-trilha-falha"}`,
+    class: `mapa-trilha ${cadeia.ok ? "mapa-trilha-ok" : "mapa-trilha-falha"}`,
     "data-trilha": chave,
   };
   if (!cadeia.ok && cadeia.etapa_falha) {
@@ -124,31 +137,37 @@ function criarTrilhaCadeia(chave, titulo, cadeia, aoInspecionar) {
 
   const fases = [
     criarBlocoFase(
+      chave,
       "at1",
       "AT1 · Transcrição",
       cadeia.at1,
       "pre_mrna",
       cadeia.at1?.sequencia || cadeia.dna || "",
       cadeia.at1?.ok ? extrairMarcasAt1(cadeia.at1) : [],
-      aoInspecionar
+      aoInspecionar,
+      aoDetalhar
     ),
     criarBlocoFase(
+      chave,
       "at2",
       "AT2 · Splicing",
       cadeia.at2,
       "mrna_maduro",
       cadeia.at2?.sequencia || "",
       cadeia.at2?.ok ? extrairMarcasAt2(cadeia.at2) : [],
-      aoInspecionar
+      aoInspecionar,
+      aoDetalhar
     ),
     criarBlocoFase(
+      chave,
       "at3",
       "AT3 · Tradução",
       cadeia.at3,
       "proteina",
       cadeia.at3?.regiao_transcrita || "",
       cadeia.at3?.ok ? extrairMarcasAt3(cadeia.at3) : [],
-      aoInspecionar
+      aoInspecionar,
+      aoDetalhar
     ),
   ];
 
@@ -220,7 +239,30 @@ function renderizarDiferencasAlinhamento(al) {
   ]);
 }
 
-function criarTrilhaAlinhamento(alinhamentos) {
+function criarTrilhaAlinhamento(alinhamentos, dados) {
+  const dna1 = String(dados?.seq1?.dna || "");
+  const dna2 = String(dados?.seq2?.dna || "");
+  const origens = el("div", { class: "mapa-at4-origens" }, [
+    el("div", { class: "mapa-origem-dna-item" }, [
+      el("span", { class: "mapa-conexao-dna", "data-conexao-dna": "seq1", "aria-hidden": "true" }),
+      el("span", {
+        class: "mono",
+        "data-origem-dna": "seq1",
+        "data-valor": dna1,
+        text: `DNA original (Seq 1): ${abreviarProduto(dna1, 44)}`,
+      }),
+    ]),
+    el("div", { class: "mapa-origem-dna-item" }, [
+      el("span", { class: "mapa-conexao-dna", "data-conexao-dna": "seq2", "aria-hidden": "true" }),
+      el("span", {
+        class: "mono",
+        "data-origem-dna": "seq2",
+        "data-valor": dna2,
+        text: `DNA original (Seq 2): ${abreviarProduto(dna2, 44)}`,
+      }),
+    ]),
+  ]);
+
   const cards = (alinhamentos || []).map((al) => {
     const tipo = al.metodo === "local" ? "local" : "global";
     const titulo = tipo === "local" ? "Smith–Waterman (Local)" : "Needleman–Wunsch (Global)";
@@ -263,12 +305,13 @@ function criarTrilhaAlinhamento(alinhamentos) {
   });
 
   return el("section", {
-    class: "cartao mapa-trilha",
+    class: "mapa-trilha",
     "data-trilha": "alinhamento",
   }, [
     el("div", { class: "mapa-trilha-cabecalho" }, [
-      el("h2", { text: "Convergência AT4 · Alinhamento dos DNAs originais" }),
+      el("h2", { text: "Análise paralela AT4 · Alinhamento dos DNAs originais" }),
     ]),
+    origens,
     el("div", { class: "mapa-alinhamentos-lista" }, cards),
   ]);
 }
@@ -297,7 +340,7 @@ export function renderizarMapaLab(conteiner, dados) {
   limpar(conteiner);
 
   const inspetorBox = el("section", {
-    class: "cartao mapa-inspetor",
+    class: "mapa-inspetor",
     "data-regiao": "inspetor",
   }, [
     el("p", {
@@ -313,14 +356,87 @@ export function renderizarMapaLab(conteiner, dados) {
     inspetor.inspecionar(indice);
   }
 
-  const grade = el("div", { class: "grade-dupla mapa-grade" }, [
-    criarTrilhaCadeia("seq1", "Cadeia 1", dados.seq1, aoInspecionar),
-    criarTrilhaCadeia("seq2", "Cadeia 2", dados.seq2, aoInspecionar),
+  let detalheAberto = null;
+  let fecharEsc = null;
+
+  function fecharDetalhe() {
+    if (fecharEsc) {
+      document.removeEventListener("keydown", fecharEsc);
+      fecharEsc = null;
+    }
+    if (detalheAberto) {
+      const { elDetalhe, btnOrigem } = detalheAberto;
+      elDetalhe.remove();
+      detalheAberto = null;
+      if (btnOrigem && typeof btnOrigem.focus === "function") {
+        btnOrigem.focus();
+      }
+    }
+  }
+
+  function aoDetalhar(trilhaKey, faseId, titulo, faseObj, sequenciaCtx, btnOrigem) {
+    const mesmo = detalheAberto && detalheAberto.btnOrigem === btnOrigem;
+    fecharDetalhe();
+    if (mesmo) return;
+
+    const trilhaEl = conteiner.querySelector(`[data-trilha="${trilhaKey}"]`);
+    if (!trilhaEl) return;
+
+    const btnFechar = el("button", {
+      type: "button",
+      class: "btn btn-pequeno",
+      "data-acao": "fechar-detalhe",
+      text: "Voltar",
+      onClick: () => fecharDetalhe(),
+    });
+    const slotViz = el("div", { class: "mapa-detalhe-viz" });
+    const detalheEl = el("section", {
+      class: "cartao mapa-detalhe-cartao",
+      "data-detalhe-fase": faseId,
+      "data-trilha-origem": trilhaKey,
+    }, [
+      el("div", { class: "mapa-detalhe-topo" }, [
+        el("strong", { text: `${titulo} — ${trilhaKey.toUpperCase()}` }),
+        btnFechar,
+      ]),
+      slotViz,
+    ]);
+
+    trilhaEl.appendChild(detalheEl);
+
+    const onVizInsp = (pos) => aoInspecionar(sequenciaCtx, faseObj.eventos || [], pos);
+    const viz = faseId === "at1"
+      ? criarVizAT1(slotViz, onVizInsp)
+      : faseId === "at2"
+        ? criarVizAT2(slotViz, onVizInsp)
+        : criarVizAT3(slotViz, onVizInsp);
+
+    const reg = {
+      entrada: { linha: trilhaKey === "seq1" ? 1 : 2, sequencia: faseObj.sequencia || sequenciaCtx },
+      dados: faseObj,
+      passos: faseObj.eventos || [],
+    };
+    viz.definirRegistro(reg);
+    viz.atualizar(Math.max(1, reg.passos.length), reg.passos);
+
+    fecharEsc = (ev) => {
+      if (ev.key === "Escape") {
+        ev.preventDefault();
+        fecharDetalhe();
+      }
+    };
+    document.addEventListener("keydown", fecharEsc);
+    detalheAberto = { elDetalhe: detalheEl, btnOrigem };
+  }
+
+  const grade = el("div", { class: "mapa-grade" }, [
+    criarTrilhaCadeia("seq1", "Cadeia 1", dados.seq1, aoInspecionar, aoDetalhar),
+    criarTrilhaCadeia("seq2", "Cadeia 2", dados.seq2, aoInspecionar, aoDetalhar),
   ]);
 
   conteiner.appendChild(grade);
   conteiner.appendChild(inspetorBox);
-  conteiner.appendChild(criarTrilhaAlinhamento(dados.alinhamentos));
+  conteiner.appendChild(criarTrilhaAlinhamento(dados.alinhamentos, dados));
 
   animarTrilhasSequencialmente(conteiner);
 }

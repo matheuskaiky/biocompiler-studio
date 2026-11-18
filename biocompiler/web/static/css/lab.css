@@ -1,0 +1,95 @@
+/* Polimento da aba "Montar experimento" no Laboratório Completo (OS-M10-07). */
+
+.lab-editor-painel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-5, 20px);
+}
+
+.lab-parametros-barra {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) repeat(3, minmax(90px, 1fr));
+  gap: var(--esp-3, 12px);
+  align-items: end;
+}
+
+.segmentado-metodo {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  padding: 3px;
+  border-radius: var(--raio-medio, 10px);
+  background: var(--superficie-elevada, #212428);
+  border: 1px solid var(--separador, rgba(255, 255, 255, 0.12));
+}
+
+.segmentado-btn {
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--raio-pequeno, 6px);
+  background: transparent;
+  color: var(--texto-secundario, #b4b8c0);
+  font-family: var(--fonte-ui, system-ui, sans-serif);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--dur-micro, 120ms) var(--curva-padrao, ease),
+              color var(--dur-micro, 120ms) var(--curva-padrao, ease);
+}
+
+.segmentado-btn:hover {
+  color: var(--texto, #f5f5f7);
+}
+
+.segmentado-btn[aria-pressed="true"] {
+  background: var(--superficie, #181a1d);
+  color: var(--texto, #f5f5f7);
+  border-color: var(--separador, rgba(255, 255, 255, 0.14));
+  box-shadow: var(--elevacao-1, 0 1px 2px rgba(0, 0, 0, 0.25));
+  font-weight: 600;
+}
+
+.metodo-select-oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.input-arquivo-oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  clip-path: inset(50%);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.zona-arquivo[data-zona-soltar] {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-3, 12px);
+  padding: var(--esp-4, 16px);
+  border-radius: var(--raio-medio, 10px);
+  border: 1.5px dashed var(--separador, rgba(255, 255, 255, 0.18));
+  background: var(--superficie-elevada, #212428);
+  transition: border-color var(--dur-micro, 120ms) var(--curva-padrao, ease),
+              background-color var(--dur-micro, 120ms) var(--curva-padrao, ease);
+}
+
+.zona-arquivo[data-zona-soltar].arrastando {
+  border-color: var(--acento, var(--cor-dna));
+  background: color-mix(in srgb, var(--acento, var(--cor-dna)) 10%, var(--superficie-elevada));
+}
+
+@media (max-width: 900px) {
+  .lab-parametros-barra {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

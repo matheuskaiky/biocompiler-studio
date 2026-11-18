@@ -12,53 +12,53 @@ Sequências usadas no caso integrado (SPEC §11.1):
 - **Seq1 (referência):** `CCATGGCTGTCCCCCCCCCCACCCCCCCCCCCCCCCAGAAACCGTAAGG`
 - **Seq2 (variante):** `CCATGGCTGTCCCCCCCCCCACCCCCCCCCCCCCCCAGAATCCGTAAGG`
 
-## Passo 1 — Abertura no Laboratório Completo
+## Passo 1 — Abertura no Laboratório Completo e detalhe no Mapa
 
-**Ação:** Abrir `http://127.0.0.1:8765/` e clicar em **Carregar exemplo integrado** e depois em **Executar**.
+**Ação:** Abrir `http://127.0.0.1:8765/?seq1=CCATGGCTGTCCCCCCCCCCACCCCCCCCCCCCCCCAGAAACCGTAAGG&seq2=CCATGGCTGTCCCCCCCCCCACCCCCCCCCCCCCCCAGAATCCGTAAGG&executar=1`, abrir a aba **Mapa da expressão gênica** e clicar em **Detalhar** no cartão da AT2.
 
-**Resultado esperado:** As duas cadeias (`Seq1` e `Seq2`) são processadas de ponta a ponta (`AT1 → AT2 → AT3`), e a aba **Mapa da expressão gênica** exibe ambas como `Cadeia completa`.
+**Resultado esperado:** As duas cadeias (`Seq1` e `Seq2`) são processadas de ponta a ponta (`AT1 → AT2 → AT3`), o Mapa exibe ambas como `Cadeia completa` com 6 botões **Detalhar**, e o painel detalhado da AT2 abre no próprio Laboratório exibindo os sítios, o íntron e a régua D009.
 
-**Fala:** O BioCompiler Studio executa as quatro atividades de forma isolada ou encadeada. Aqui estamos no Laboratório Completo comparando duas sequências de DNA que diferem em um único nucleotídeo.
+**Fala:** O BioCompiler Studio abre direto no Laboratório Completo comparando duas sequências de DNA que diferem em um único nucleotídeo. Pelo botão **Detalhar**, inspecionamos cada etapa sem perder a visão geral do fluxo.
 
-## Passo 2 — Transcrição (AT1) passo a passo
+## Passo 2 — Transcrição (BioCompiler 1.0 / AT1) e envio para a etapa seguinte
 
-**Ação:** Acessar `http://127.0.0.1:8765/at1?seq=CCATGGCTGTCCCCCCCCCCACCCCCCCCCCCCCCCAGAAACCGTAAGG&modo=guiado&executar=1` e avançar pelo player até o resultado final.
+**Ação:** Acessar `http://127.0.0.1:8765/at1?seq=CCATGGCTGTCCCCCCCCCCACCCCCCCCCCCCCCCAGAAACCGTAAGG&modo=guiado&executar=1`, avançar pela **linha do tempo** ou pelo botão próximo do player e depois clicar em **Pular para o resultado** e em **Enviar para BioCompiler 2.0**.
 
-**Resultado esperado:** O player destaca a substituição `T → U`, identifica o códon `AUG` na posição 2 e o códon de parada `UAA` em fase na posição 44, gerando o pré-mRNA completo sem descartar os flancos.
+**Resultado esperado:** O cursor desliza pela fita de DNA até o `ATG` (posição 2), forma as trincas a partir do START, marca o `STOP` em fase na posição 44 e, no evento `T_PARA_U`, o pré-mRNA nasce abaixo do DNA com alinhamento posicional exato (`T → U`). Clicar em **Enviar para BioCompiler 2.0** abre `/at2` já preenchida com o pré-mRNA gerado.
 
-**Fala:** Na AT1, a transcrição converte a fita inteira e valida o quadro de leitura aberto do primeiro `AUG` até o primeiro `STOP` em fase, usando apenas implementação própria em Python padrão.
+**Fala:** Na AT1, a transcrição converte a fita inteira e valida o quadro de leitura aberto do primeiro `ATG` até o primeiro `STOP` em fase. Ao enviar o produto para o BioCompiler 2.0, o pré-mRNA vira a entrada da maturação.
 
-## Passo 3 — Splicing e maturação (AT2): íntron de 30 nt e branch 16 posições antes (15 nt entre)
+## Passo 3 — Splicing e maturação (BioCompiler 2.0 / AT2) e envio para tradução
 
-**Ação:** Acessar `http://127.0.0.1:8765/at2?seq=CCAUGGCUGUCCCCCCCCCCACCCCCCCCCCCCCCCAGAAACCGUAAGG&modo=guiado&executar=1` e inspecionar os eventos no SpliceLab.
+**Ação:** Em `http://127.0.0.1:8765/at2?seq=CCAUGGCUGUCCCCCCCCCCACCCCCCCCCCCCCCCAGAAACCGUAAGG&modo=guiado&executar=1`, avançar pelos passos de splicing e maturação até **Pular para o resultado** e clicar em **Enviar para o Ribossomo**.
 
-**Resultado esperado:** O núcleo identifica o íntron de **30 nt** (`posicao_gu = 8` até o final de `AG` com `posicao_ag = 36`, em base 0) e o branch point `A` em `posicao_branch = 20`. O `A` está **16 posições antes** do `AG` (`36 − 20 = 16`, conforme a frase da SPEC §11.1 — 16 nt de deslocamento), havendo **15 nt entre** eles (`36 − 20 − 1 = 15`), que é o valor exibido na régua D009 da tela (`Branch → AG: 15`, dentro da janela 10–30). Em seguida une os éxons em `CCAUGGCUAAACCGUAAGG` e adiciona `m7Gppp` e a cauda de 100 adeninas.
+**Resultado esperado:** O núcleo identifica o íntron de **30 nt** (`posicao_gu = 8` até a base 37 inclusive, com `posicao_ag = 36` marcando o início do `AG`, em base 0) e o branch point `A` em `posicao_branch = 20` (**16 nt** de deslocamento antes do `AG`, `Branch → AG: 15` na régua D009). Na mesma fita, o íntron se ergue e esmaece enquanto os éxons se encostam em `CCAUGGCUAAACCGUAAGG`, o quepe `m7Gppp` se encaixa no 5′ e a cauda `A×100` surge no 3′ com legenda de `30 nt` removidos, `19 nt` preservados e `m7Gppp + 100 A` adicionados. Clicar em **Enviar para o Ribossomo** abre `/at3` com o mRNA maduro.
 
-**Fala:** Na AT2, o inspetor mostra exatamente por que o íntron de 30 nt foi removido: em base 0, o `A` na posição 20 fica 16 posições (16 nt de deslocamento) antes do `AG` na posição 36, resultando em 15 nucleotídeos entre os dois sítios na régua D009 (janela válida de 10 a 30).
+**Fala:** Na AT2, vemos na mesma fita o que foi removido, preservado e adicionado, com a régua D009 comprovando os 15 nucleotídeos entre o `A` e o `AG` (16 posições antes). Em seguida enviamos o mRNA maduro para o Ribossomo.
 
-## Passo 4 — Tradução (AT3) e impacto da variante no Comparador
+## Passo 4 — Tradução no Ribossomo (AT3) e impacto no Comparador
 
-**Ação:** Acessar `http://127.0.0.1:8765/?seq1=CCATGGCTGTCCCCCCCCCCACCCCCCCCCCCCCCCAGAAACCGTAAGG&seq2=CCATGGCTGTCCCCCCCCCCACCCCCCCCCCCCCCCAGAATCCGTAAGG&executar=1&aba=Comparador` (ou clicar na aba **Comparador molecular**).
+**Ação:** Em `/at3` (ou abrindo `http://127.0.0.1:8765/at3?seq=m7GpppCCAUGGCUAAACCGUAAGGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA&modo=guiado&executar=1`), percorrer a tradução pela **linha do tempo** e depois abrir `http://127.0.0.1:8765/?seq1=CCATGGCTGTCCCCCCCCCCACCCCCCCCCCCCCCCAGAAACCGTAAGG&seq2=CCATGGCTGTCCCCCCCCCCACCCCCCCCCCCCCCCAGAATCCGTAAGG&executar=1&aba=Comparador`.
 
-**Resultado esperado:** O comparador exibe lado a lado os quatro níveis moleculares e destaca a diferença observada: na `Seq1`, a proteína traduzida é **Met-Ala-Lys-Pro**; na `Seq2`, a alteração no éxon resulta em **Met-Ala-Asn-Pro**.
+**Resultado esperado:** Na AT3, o **ribossomo** posiciona-se no `AUG`, avança de 3 em 3 bases formando a cadeia polipeptídica (**Met-Ala-Lys-Pro**) com ligação visual códon ↔ aminoácido e para no `STOP`. No **Comparador molecular**, a troca pontual na `Seq2` aparece lado a lado nos quatro níveis, alterando a proteína para **Met-Ala-Asn-Pro**.
 
-**Fala:** Sem rotular categorias clínicas no JavaScript, o Comparador projeta os resultados reais da API nos quatro níveis e evidencia como uma troca pontual altera o terceiro aminoácido de `Lys` para `Asn`.
+**Fala:** O ribossomo avança exatamente de três em três nucleotídeos até o `STOP` em fase, e clicar em um aminoácido destaca o códon de origem. No Comparador, a diferença pontual entre `Seq1` e `Seq2` se traduz na troca de `Lys` para `Asn`.
 
-## Passo 5 — Laboratório de mutações e retorno para AT4
+## Passo 5 — AT4: preenchimento, inspetor e comparação lado a lado
 
-**Ação:** Ainda na aba **Comparador molecular**, selecionar `seq2`, operação `substituir`, índice `0`, base `G`, clicar em **Aplicar mutação** e depois em **Alinhar com origem** (ou abrir `http://127.0.0.1:8765/at4?seq1=ACGTAC&seq2=ACGTTC&executar=1`).
+**Ação:** Abrir `http://127.0.0.1:8765/at4?seq1=ACGTAC&seq2=ACGTTC&modo=guiado&executar=1`, avançar no preenchimento, clicar em uma célula da matriz e acionar **Lado a lado** na barra da visualização.
 
-**Resultado esperado:** Ao mutar, o laboratório reenvia a entrada para `/api/all` e atualiza o comparador e o histórico de mutações. No alinhamento do exemplo `ACGTAC` × `ACGTTC` em `/at4`, o resultado exibe **Score 9** (global e local).
+**Resultado esperado:** A matriz exibe o preenchimento célula a célula, o inspetor mostra os candidatos vindos de `/api/at4/celula` com destaque das dependências, o traceback marca o caminho ótimo com **Score 9**, e a vista **Lado a lado** exibe os métodos Local (Smith–Waterman) e Global (Needleman–Wunsch) em paralelo.
 
-**Fala:** Cada mutação editada no laboratório reexecuta o núcleo Python pela API e permite enviar origem contra variante diretamente para a matriz da AT4.
+**Fala:** Toda a programação dinâmica — matriz, critérios de desempate e traceback — vem do núcleo Python; o navegador apenas anima, inspeciona dependências e compara Local e Global lado a lado.
 
-## Passo 6 — Matriz e traceback na AT4 + Modo apresentação
+## Passo 6 — Modo Apresentação e controles de acessibilidade
 
-**Ação:** Na página `http://127.0.0.1:8765/at4?seq1=ACGTAC&seq2=ACGTTC&modo=guiado&executar=1`, avançar no player pelos passos da matriz e clicar em **Apresentação** no topo.
+**Ação:** Na barra superior em vidro fino, clicar em **Apresentação** e alternar o tema entre escuro e claro.
 
-**Resultado esperado:** A matriz exibe bordas inicializadas, preenchimento célula a célula com candidatos da API no inspetor, caminho ótimo de traceback em setas SVG e alinhamento progressivo com **Score 9**. O modo apresentação oculta a barra lateral e amplia a tipografia.
+**Resultado esperado:** O modo **Apresentação** oculta a barra lateral de navegação, amplia a tipografia da área principal e exibe o rodapé de atalhos; a alternância de tema preserva contraste legível em controles e superfícies de dados.
 
-**Fala:** Toda a programação dinâmica — matriz, critérios de desempate e traceback — vem do núcleo Python; o navegador apenas anima e inspeciona os eventos.
+**Fala:** Para projeção em sala, o modo Apresentação limpa o entorno da tela mantendo os controles do player e a legibilidade nos dois temas.
 
 ## Passo 7 — Casos oficiais, histórico e metodologia
 

@@ -1,4 +1,4 @@
-<div class="cartao cartao-destaque">
+<div class="lab-editor-painel">
   <div class="grade-dupla">
     <div class="campo-grupo">
       <label for="campo-seq1">Seq1 (DNA)</label>
@@ -23,10 +23,15 @@
     </div>
   </div>
 
-  <div class="grade-params">
+  <div class="lab-parametros-barra">
     <div class="campo-grupo">
       <label for="campo-metodo">Método (AT4)</label>
-      <select id="campo-metodo" data-campo="metodo">
+      <div class="segmentado-metodo" data-segmento-metodo role="group" aria-label="Método de alinhamento">
+        <button type="button" class="segmentado-btn" data-valor="local" aria-pressed="false">Local</button>
+        <button type="button" class="segmentado-btn" data-valor="global" aria-pressed="false">Global</button>
+        <button type="button" class="segmentado-btn" data-valor="both" aria-pressed="true">Ambos</button>
+      </div>
+      <select id="campo-metodo" data-campo="metodo" class="metodo-select-oculto" tabindex="-1" aria-hidden="true">
         <option value="both" selected>Ambos (local + global)</option>
         <option value="local">Local (Smith–Waterman)</option>
         <option value="global">Global (Needleman–Wunsch)</option>
@@ -58,8 +63,14 @@
     </button>
   </div>
 
-  <div class="zona-arquivo" data-zona="arquivo-par">
-    <label for="arquivo-par">Importar arquivo (.txt ou .fasta com 2 sequências):</label>
-    <input id="arquivo-par" type="file" accept=".txt,.fasta,.fa,text/plain" data-campo="arquivo">
+  <div class="zona-arquivo" data-zona="arquivo-par" data-zona-soltar="">
+    <div>
+      <strong>Importar par de sequências</strong>
+      <p class="texto-suave">Arraste e solte um arquivo <span class="mono">.txt</span> ou <span class="mono">.fasta</span> com 2 sequências, ou use o botão ao lado.</p>
+    </div>
+    <button type="button" class="btn" data-acao="importar" aria-label="Importar arquivo .txt ou .fasta">
+      Importar arquivo
+    </button>
+    <input id="arquivo-par" type="file" accept=".txt,.fasta,.fa,text/plain" data-campo="arquivo" class="input-arquivo-oculto" aria-label="Selecionar arquivo de sequências">
   </div>
 </div>

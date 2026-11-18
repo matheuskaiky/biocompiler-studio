@@ -31,6 +31,10 @@
   font-variant-numeric: tabular-nums;
 }
 
+[data-superficie="vidro"] .player-passo {
+  color: var(--texto);
+}
+
 /* Linha do tempo acessível (slider) com marcos */
 .linha-tempo {
   position: relative;

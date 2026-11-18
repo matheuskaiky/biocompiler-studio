@@ -1,0 +1,21 @@
+/* Tokens de movimento, curvas naturais e modo reduzido. */
+
+.transicao-suave {
+  transition-property: transform, opacity, background-color, border-color, color;
+  transition-duration: var(--dur-curta);
+  transition-timing-function: var(--curva-padrao);
+}
+
+.transicao-micro {
+  transition-property: background-color, border-color, color, box-shadow;
+  transition-duration: var(--dur-micro);
+  transition-timing-function: var(--curva-padrao);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

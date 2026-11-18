@@ -113,8 +113,16 @@ class TestEnviarParaProxima(BaseViz):
     def test_transicao_curta_e_pulada_com_movimento_reduzido(self):
         css = (CSS / "transicoes.css").read_text(encoding="utf-8")
         import re as _re
-        for valor, unidade in _re.findall(r"animation-duration\s*:\s*([\d.]+)(ms|s)", css):
-            ms = float(valor) * (1000 if unidade == "s" else 1)
+        tokens = (CSS / "tokens.css").read_text(encoding="utf-8")
+        duracoes = _re.findall(r"animation-duration\s*:\s*([^;]+);", css)
+        self.assertTrue(duracoes, "transicoes.css declara a duração das view transitions")
+        for valor in duracoes:
+            m = _re.match(r"var\(\s*(--[\w-]+)", valor.strip())
+            if m:  # duração tokenizada: resolve em tokens.css
+                valor = _re.search(rf"{m.group(1)}\s*:\s*([^;]+);", tokens).group(1)
+            num = _re.match(r"\s*([\d.]+)(ms|s)", valor)
+            self.assertIsNotNone(num, f"duração não resolvida: {valor}")
+            ms = float(num.group(1)) * (1000 if num.group(2) == "s" else 1)
             self.assertLessEqual(ms, 450, "transições entre páginas ≤ 450 ms")
         self.executar("/at1", {"seq": DNA_OK, "modo": "rapido"})
         caminho, vt, pulada = self.seguir(reduzir=True)

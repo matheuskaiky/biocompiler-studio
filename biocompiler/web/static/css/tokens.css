@@ -1,24 +1,42 @@
 :root {
-  --fundo: #0b0f17;
-  --fundo-elevado: #101622;
-  --superficie: #141c2b;
-  --superficie-alt: #1a2436;
-  --borda: #263249;
-  --borda-forte: #364766;
-  --texto: #e6edf7;
-  --texto-suave: #9fb0c8;
-  --texto-apagado: #74859e;
+  /* Escala neutra (grafite escuro) */
+  --cinza-0: #0a0b0c;
+  --cinza-1: #111214;
+  --cinza-2: #181a1d;
+  --cinza-3: #212428;
+  --cinza-4: #2b2f35;
+  --cinza-5: #3a3f47;
+  --cinza-6: #525863;
+  --cinza-7: #6e7582;
+  --cinza-8: #8a9099;
+  --cinza-9: #b4b8c0;
+  --cinza-10: #d1d5db;
+  --cinza-11: #e5e7eb;
+  --cinza-12: #f5f5f7;
 
-  --cor-dna: #6366f1;
-  --cor-pre-mrna: #22d3ee;
-  --cor-splicing: #a78bfa;
-  --cor-mrna: #2dd4bf;
-  --cor-traducao: #34d399;
-  --cor-alinhamento: #f59e0b;
-  --cor-erro: #f87171;
-  --cor-ok: #34d399;
+  /* Superfícies e texto */
+  --fundo: var(--cinza-1);
+  --superficie: var(--cinza-2);
+  --superficie-elevada: var(--cinza-3);
+  --superficie-dados: var(--cinza-2);
+  --texto: var(--cinza-12);
+  --texto-secundario: var(--cinza-9);
+  --texto-terciario: var(--cinza-8);
+  --separador: rgba(255, 255, 255, 0.11);
 
+  /* Semântica científica (com legenda e letra) */
+  --cor-dna: #5e6ad2;
+  --cor-pre-mrna: #22b8cf;
+  --cor-splicing: #8b7ae8;
+  --cor-mrna: #20c997;
+  --cor-traducao: #30b87a;
+  --cor-alinhamento: #e09f24;
+  --cor-erro: #e5534b;
+  --cor-ok: #30b87a;
+  --cor-aviso: #e09f24;
   --cor-destaque: var(--cor-dna);
+  --acento: var(--cor-destaque);
+
   --base-a: #34d399;
   --base-c: #38bdf8;
   --base-g: #fbbf24;
@@ -26,32 +44,120 @@
   --base-u: #c084fc;
   --base-outro: #f87171;
 
-  --sombra-cartao: 0 10px 30px rgba(3, 7, 18, 0.45), 0 1px 0 rgba(255, 255, 255, 0.04) inset;
-  --raio-cartao: 14px;
-  --raio-controle: 10px;
-  --fonte-ui: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --fonte-mono: ui-monospace, "Cascadia Code", "Fira Code", Consolas, monospace;
+  /* Superfícies semânticas e mapa de calor (sRGB opaco) */
+  --selo-ok-bg: #172e26;
+  --selo-erro-bg: #351b1d;
+  --codon-percorrido-bg: #172e26;
+  --codon-atual-bg: #202742;
+  --codon-usado-bg: #182924;
+  --alin-dif-bg: #332714;
+  --calor-0: #331c1e;
+  --calor-1: #1d2024;
+  --calor-2: #1f233b;
+  --calor-3: #172e26;
+  --calor-4: #332714;
+  --at4-dep-bg: #202742;
+  --at4-caminho-bg: #3b2b12;
+
+  /* Tipografia */
+  --fonte-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", sans-serif;
+  --fonte-mono: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+  --tipo-titulo-grande: 28px;
+  --tipo-titulo: 22px;
+  --tipo-titulo-2: 17px;
+  --tipo-corpo: 15px;
+  --tipo-legenda: 12px;
+  --tipo-dado: 13px;
+
+  /* Espaçamento (grade 4/8 px) */
+  --esp-1: 4px;
+  --esp-2: 8px;
+  --esp-3: 12px;
+  --esp-4: 16px;
+  --esp-5: 20px;
+  --esp-6: 24px;
+  --esp-8: 32px;
+  --esp-10: 40px;
+
+  /* Raios por tipo de componente */
+  --raio-pequeno: 6px;
+  --raio-medio: 10px;
+  --raio-grande: 14px;
+  --raio-pilula: 999px;
+
+  /* Elevação sutil */
+  --elevacao-0: none;
+  --elevacao-1: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --elevacao-2: 0 6px 18px rgba(0, 0, 0, 0.34);
+  --elevacao-3: 0 14px 32px rgba(0, 0, 0, 0.44);
+
+  /* Liquid Glass */
+  --vidro-fundo: rgba(24, 26, 29, 0.54);
+  --vidro-fundo-espesso: rgba(30, 33, 37, 0.82);
+  --vidro-fundo-opaco: #181a1d;
+  --vidro-desfoque: 20px;
+  --vidro-borda: rgba(255, 255, 255, 0.18);
+  --vidro-realce: rgba(255, 255, 255, 0.11);
+  --vidro-especular: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  --texto-vidro-secundario: #d0d4dc;
+  --ambiente-1: rgba(94, 106, 210, 0.11);
+  --ambiente-2: rgba(32, 201, 151, 0.08);
+
+  /* Movimento */
+  --dur-micro: 120ms;
+  --dur-curta: 200ms;
+  --dur-media: 300ms;
+  --dur-longa: 450ms;
+  --curva-padrao: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --curva-entrada: cubic-bezier(0.16, 1, 0.3, 1);
+  --curva-saida: cubic-bezier(0.4, 0, 1, 1);
+  --curva-mola-suave: cubic-bezier(0.22, 1.12, 0.36, 1);
+
+  /* Aliases legados preservados para compatibilidade */
+  --fundo-elevado: var(--superficie-elevada);
+  --superficie-alt: var(--cinza-3);
+  --borda: var(--separador);
+  --borda-forte: var(--cinza-5);
+  --texto-suave: var(--texto-secundario);
+  --texto-apagado: var(--texto-terciario);
+  --sombra-cartao: var(--elevacao-1);
+  --raio-cartao: var(--raio-grande);
+  --raio-controle: var(--raio-medio);
 }
 
 [data-tema="claro"] {
-  --fundo: #f3f6fb;
-  --fundo-elevado: #ffffff;
+  --cinza-0: #ffffff;
+  --cinza-1: #f5f5f7;
+  --cinza-2: #ffffff;
+  --cinza-3: #efeff2;
+  --cinza-4: #e5e5ea;
+  --cinza-5: #c7c7cc;
+  --cinza-6: #8e8e93;
+  --cinza-7: #6b7280;
+  --cinza-8: #636366;
+  --cinza-9: #4b5563;
+  --cinza-10: #3a3a3c;
+  --cinza-11: #2c2c2e;
+  --cinza-12: #1d1d1f;
+
+  --fundo: #f5f5f7;
   --superficie: #ffffff;
-  --superficie-alt: #edf2f8;
-  --borda: #d6e0ec;
-  --borda-forte: #b5c5d8;
-  --texto: #111827;
-  --texto-suave: #475569;
-  --texto-apagado: #64748b;
+  --superficie-elevada: #fbfbfd;
+  --superficie-dados: #ffffff;
+  --texto: #1d1d1f;
+  --texto-secundario: #4b5563;
+  --texto-terciario: #6b7280;
+  --separador: rgba(0, 0, 0, 0.09);
 
   --cor-dna: #4338ca;
-  --cor-pre-mrna: #0891b2;
-  --cor-splicing: #7c3aed;
-  --cor-mrna: #0d9488;
+  --cor-pre-mrna: #0e7490;
+  --cor-splicing: #6d28d9;
+  --cor-mrna: #0f766e;
   --cor-traducao: #047857;
   --cor-alinhamento: #b45309;
   --cor-erro: #dc2626;
   --cor-ok: #047857;
+  --cor-aviso: #b45309;
 
   --base-a: #047857;
   --base-c: #0369a1;
@@ -60,7 +166,35 @@
   --base-u: #7e22ce;
   --base-outro: #dc2626;
 
-  --sombra-cartao: 0 8px 24px rgba(15, 23, 42, 0.07), 0 1px 2px rgba(15, 23, 42, 0.04);
+  /* Superfícies semânticas e mapa de calor (sRGB opaco) */
+  --selo-ok-bg: #dcfce7;
+  --selo-erro-bg: #fee2e2;
+  --codon-percorrido-bg: #d1fae5;
+  --codon-atual-bg: #e0e7ff;
+  --codon-usado-bg: #ecfdf5;
+  --alin-dif-bg: #fef3c7;
+  --calor-0: #fee2e2;
+  --calor-1: #f4f4f6;
+  --calor-2: #e0e7ff;
+  --calor-3: #d1fae5;
+  --calor-4: #fef3c7;
+  --at4-dep-bg: #e0e7ff;
+  --at4-caminho-bg: #fde68a;
+
+  --elevacao-1: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --elevacao-2: 0 6px 18px rgba(0, 0, 0, 0.08);
+  --elevacao-3: 0 14px 32px rgba(0, 0, 0, 0.12);
+
+  --vidro-fundo: rgba(255, 255, 255, 0.56);
+  --vidro-fundo-espesso: rgba(255, 255, 255, 0.86);
+  --vidro-fundo-opaco: #ffffff;
+  --vidro-desfoque: 20px;
+  --vidro-borda: rgba(0, 0, 0, 0.11);
+  --vidro-realce: rgba(255, 255, 255, 0.72);
+  --vidro-especular: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  --texto-vidro-secundario: #363b45;
+  --ambiente-1: rgba(94, 106, 210, 0.09);
+  --ambiente-2: rgba(32, 201, 151, 0.07);
 }
 
 [data-pagina="lab"] { --cor-destaque: var(--cor-dna); }

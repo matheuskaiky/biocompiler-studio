@@ -23,6 +23,7 @@ export function criarVizAT3(conteiner, onInspecionar, onCodonsPercorridos) {
   let passos = [];
   let janelaIdx = 0;
   let xRiboAnterior = null;
+  let prevTraduzidosCount = 0;
 
   function desenhar() {
     limpar(conteiner);
@@ -76,7 +77,7 @@ export function criarVizAT3(conteiner, onInspecionar, onCodonsPercorridos) {
     if (barraJanela) raiz.appendChild(barraJanela);
 
     const largura = Math.max(320, (fim - ini) * PASSO_X + 24);
-    const altura = 158;
+    const altura = 176;
     const svg = svgEl("svg", {
       class: "viz-svg",
       width: largura,
@@ -86,8 +87,23 @@ export function criarVizAT3(conteiner, onInspecionar, onCodonsPercorridos) {
       "aria-label": "mRNA maduro e ribossomo em tradução",
     });
 
+    const defs = svgEl("defs", {}, [
+      svgEl("linearGradient", { id: "ribo-grad-maior", x1: "0%", y1: "0%", x2: "0%", y2: "100%" }, [
+        svgEl("stop", { offset: "0%", "stop-color": "var(--cor-traducao, #30b87a)", "stop-opacity": "0.42" }),
+        svgEl("stop", { offset: "100%", "stop-color": "var(--cor-traducao, #30b87a)", "stop-opacity": "0.18" }),
+      ]),
+      svgEl("linearGradient", { id: "ribo-grad-menor", x1: "0%", y1: "0%", x2: "0%", y2: "100%" }, [
+        svgEl("stop", { offset: "0%", "stop-color": "var(--cor-traducao, #30b87a)", "stop-opacity": "0.16" }),
+        svgEl("stop", { offset: "100%", "stop-color": "var(--cor-traducao, #30b87a)", "stop-opacity": "0.32" }),
+      ]),
+      svgEl("filter", { id: "ribo-sombra", x: "-15%", y: "-15%", width: "130%", height: "140%" }, [
+        svgEl("feDropShadow", { dx: "0", dy: "3", stdDeviation: "2.5", "flood-color": "#000000", "flood-opacity": "0.28" }),
+      ]),
+    ]);
+    svg.appendChild(defs);
+
     const yMarcas = 4;
-    const yFita = 64;
+    const yFita = 76;
     const pStart = dados.posicao_start;
     const pStop = dados.posicao_stop;
     const jaStop = tipos.has("STOP_ENCONTRADO") || tipos.has("STOP_EM_FASE");
@@ -100,39 +116,65 @@ export function criarVizAT3(conteiner, onInspecionar, onCodonsPercorridos) {
       posRibo = traduzidos[codonAtualIdx].posicao;
     }
     const localRibo = Math.max(0, Math.min(Math.max(0, fim - ini - 3), posRibo - ini));
+    const wCanal = PASSO_X * 3 - 4;
+    const wMaior = wCanal + 12;
+    const wMenor = wCanal - 4;
     const xRibo = 10 + localRibo * PASSO_X;
-    const yRibo = yFita - 32;
+    const yRibo = yFita - 50;
+    const cxRibo = wCanal / 2;
+
+    const tunelEl = svgEl("g", {
+      class: "ribossomo-tunel",
+      "data-tunel-saida": "",
+    }, [
+      svgEl("rect", {
+        x: cxRibo - 8,
+        y: -4,
+        width: 16,
+        height: 15,
+        rx: 5,
+        class: "ribossomo-tunel-corpo",
+      }),
+      svgEl("line", {
+        x1: cxRibo,
+        y1: -1,
+        x2: cxRibo,
+        y2: 12,
+        class: "ribossomo-tunel-eixo",
+      }),
+    ]);
 
     const gRibo = svgEl("g", {
-      class: "ribossomo-grupo",
+      class: `ribossomo-grupo${codonAtualCodigo && !jaStop ? " ribossomo-lendo" : ""}`,
       "data-ribossomo": "",
       "data-codon-atual": codonAtualIdx === null ? "" : String(codonAtualIdx),
       "data-parado": jaStop ? "true" : "false",
       transform: `translate(${xRibo}, ${yRibo})`,
+      filter: "url(#ribo-sombra)",
     }, [
       svgEl("rect", {
-        class: "ribossomo-janela",
+        class: "ribossomo-canal",
+        "data-canal-leitura": "",
         x: 0,
-        y: 0,
-        width: PASSO_X * 3 - 4,
-        height: 78,
-        rx: 14,
+        y: 44,
+        width: wCanal,
+        height: 36,
+        rx: 8,
       }),
       svgEl("path", {
         class: "ribossomo-subunidade-maior",
-        d: `M 2 22 C 2 5, ${Math.round((PASSO_X * 3 - 4) * 0.25)} 1, ${Math.round((PASSO_X * 3 - 4) / 2)} 1 C ${Math.round((PASSO_X * 3 - 4) * 0.75)} 1, ${PASSO_X * 3 - 6} 5, ${PASSO_X * 3 - 6} 22 Z`,
+        "data-subunidade": "maior",
+        d: `M -6 40 C -8 18, ${Math.round(cxRibo * 0.35)} 4, ${cxRibo} 4 C ${Math.round(wCanal - cxRibo * 0.35)} 4, ${wCanal + 8} 18, ${wCanal + 6} 40 Q ${cxRibo} 46, -6 40 Z`,
       }),
-      svgEl("rect", {
+      tunelEl,
+      svgEl("path", {
         class: "ribossomo-subunidade-menor",
-        x: 6,
-        y: 62,
-        width: PASSO_X * 3 - 16,
-        height: 12,
-        rx: 6,
+        "data-subunidade": "menor",
+        d: `M 2 84 Q ${cxRibo} 79, ${wMenor + 2} 84 C ${wMenor + 4} 97, ${Math.round(wCanal * 0.78)} 104, ${cxRibo} 104 C ${Math.round(wCanal * 0.22)} 104, 0 97, 2 84 Z`,
       }),
       svgEl("text", {
-        x: (PASSO_X * 3 - 4) / 2,
-        y: 12,
+        x: cxRibo,
+        y: 25,
         class: "svg-regua-texto",
         "text-anchor": "middle",
         "dominant-baseline": "central",
@@ -255,6 +297,21 @@ export function criarVizAT3(conteiner, onInspecionar, onCodonsPercorridos) {
     raiz.appendChild(palcoTrad);
     conteiner.appendChild(raiz);
 
+    if (!movimentoReduzido() && passoAtual > 1 && traduzidos.length > prevTraduzidosCount && aaEls.length) {
+      const novoAa = aaEls[aaEls.length - 1];
+      const tunelRect = tunelEl.getBoundingClientRect();
+      const aaRect = novoAa.getBoundingClientRect();
+      if (tunelRect.width > 0 && aaRect.width > 0) {
+        const dx = (tunelRect.left + tunelRect.width / 2) - (aaRect.left + aaRect.width / 2);
+        const dy = (tunelRect.top + tunelRect.height / 2) - (aaRect.top + aaRect.height / 2);
+        animar(novoAa, [
+          { transform: `translate(${dx}px, ${dy}px) scale(0.75)`, opacity: 0.72 },
+          { transform: "translate(0px, 0px) scale(1)", opacity: 1 },
+        ], { duration: 520, easing: "cubic-bezier(0.22, 1, 0.36, 1)" });
+      }
+    }
+    prevTraduzidosCount = traduzidos.length;
+
     const selAtual = estadoGlobal.obter().selecao;
     if (Number.isInteger(selAtual) && selAtual >= 0 && selAtual < codonEls.length) {
       aplicarSelecao(selAtual);
@@ -266,6 +323,7 @@ export function criarVizAT3(conteiner, onInspecionar, onCodonsPercorridos) {
     passos = (registro && registro.passos) || [];
     janelaIdx = 0;
     xRiboAnterior = null;
+    prevTraduzidosCount = 0;
     estadoGlobal.limparSelecao();
   }
 

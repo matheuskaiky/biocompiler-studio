@@ -2,7 +2,12 @@
 
 import { ativarAba, definirStatus, registrarHistorico } from "../app.js";
 import { executarAt4, exportarZip, obterExemplos } from "../api.js";
-import { atualizarContadores, conectarZonaArquivo } from "../componentes/editor.js";
+import {
+  atualizarContadores,
+  conectarSegmentoMetodo,
+  conectarZonaArquivo,
+  extrairParSequencias,
+} from "../componentes/editor.js";
 import { criarEtapas } from "../componentes/etapas.js";
 import { renderizarListaArtefatos } from "../componentes/exportacao.js";
 import { criarPlayer } from "../componentes/player.js";
@@ -86,8 +91,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   s1El.addEventListener("input", () => { textoArquivo = null; atualizar(); });
   s2El.addEventListener("input", () => { textoArquivo = null; atualizar(); });
 
+  conectarSegmentoMetodo(qs('[data-segmento-metodo]'), metEl);
+
   conectarZonaArquivo(zonaArq, inputArq, (texto, nome) => {
     textoArquivo = texto;
+    const [a, b] = extrairParSequencias(texto);
+    if (a || b) {
+      s1El.value = a;
+      s2El.value = b;
+      atualizar();
+    }
     definirStatus(`Arquivo carregado: ${nome}`);
   });
 
@@ -144,7 +157,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const env = itensAtuais[idx];
         if (!env) return;
         etapasCtrl.definirDados(env.passos, `Eventos — ${env.dados.metodo}`, 1);
-        vizCtrl.definirAlinhamento(env, paramsScore);
+        vizCtrl.definirAlinhamento(env, paramsScore, itensOk);
         playerCtrl.selecionarRegistro(idx);
       },
       onPasso: (k, passos) => {
@@ -156,7 +169,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     itensAtuais = itensOk;
     const primeiro = itensOk[0];
     etapasCtrl.definirDados(primeiro.passos, `Eventos — ${primeiro.dados.metodo}`, 1);
-    vizCtrl.definirAlinhamento(primeiro, paramsScore);
+    vizCtrl.definirAlinhamento(primeiro, paramsScore, itensOk);
     playerCtrl.definirRegistros(itensOk, 0);
   }
 

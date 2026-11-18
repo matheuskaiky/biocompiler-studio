@@ -1,0 +1,125 @@
+/* Coreografia científica da AT1 (transcrição DNA -> pré-mRNA). */
+
+.at1-palco-fita {
+  position: relative;
+  display: inline-block;
+  min-width: 100%;
+}
+
+/* Lente de vidro fino que desliza sobre a fita de DNA */
+.at1-cursor {
+  position: absolute;
+  left: 0;
+  pointer-events: none;
+  border-radius: var(--raio-pequeno, 6px);
+  border: 1.5px solid var(--acento, var(--cor-pre-mrna));
+  background: color-mix(in srgb, var(--acento, var(--cor-pre-mrna)) 14%, transparent);
+  box-shadow: inset 0 1px 0 var(--vidro-realce, rgba(255, 255, 255, 0.14)),
+    0 2px 8px color-mix(in srgb, var(--acento, var(--cor-pre-mrna)) 28%, transparent);
+  transition-property: transform, width, opacity;
+  transition-duration: var(--dur-at1-media, var(--dur-media, 300ms));
+  transition-timing-function: var(--curva-padrao, cubic-bezier(0.25, 0.1, 0.25, 1));
+  will-change: transform, width;
+  z-index: 2;
+}
+
+.at1-cursor.cursor-inativo {
+  opacity: 0.45;
+}
+
+/* Trincas (códons) reveladas a partir do START */
+.at1-codon {
+  transition-property: opacity, transform, stroke, fill;
+  transition-duration: var(--dur-at1-curta, var(--dur-curta, 200ms));
+  transition-timing-function: var(--curva-entrada, cubic-bezier(0.16, 1, 0.3, 1));
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: at1-codon-surgir var(--dur-at1-curta, var(--dur-curta, 200ms)) var(--curva-entrada, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+@keyframes at1-codon-surgir {
+  0% {
+    opacity: 0;
+    transform: scaleX(0.88);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+/* Foco de erro determinado pela API (base inválida) */
+.at1-base-foco .svg-base-caixa {
+  stroke: var(--cor-erro, #e5534b);
+  stroke-width: 2.2;
+  fill: color-mix(in srgb, var(--cor-erro, #e5534b) 18%, var(--superficie));
+}
+
+.at1-base-foco {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: at1-erro-pulsar var(--dur-at1-media, var(--dur-media, 300ms)) var(--curva-padrao, ease);
+}
+
+[data-viz="at1"] .svg-troca .svg-base-caixa {
+  animation-duration: var(--dur-at1-media, var(--dur-media, 300ms));
+}
+
+@keyframes at1-erro-pulsar {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  65% { transform: translateX(2px); }
+}
+
+/* Painel sóbrio de diagnóstico dentro da AT1 */
+.at1-diagnostico {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-3, 12px);
+  padding: var(--esp-3, 12px) var(--esp-4, 16px);
+  border-radius: var(--raio-medio, 10px);
+  background: var(--superficie-dados, var(--superficie));
+  border: 1px solid var(--separador, var(--borda));
+  border-left: 3px solid var(--acento, var(--cor-pre-mrna));
+}
+
+.at1-diagnostico[data-status="ok"] {
+  border-left-color: var(--cor-ok, #30b87a);
+}
+
+.at1-diagnostico[data-status="erro"] {
+  border-left-color: var(--cor-erro, #e5534b);
+}
+
+.at1-diagnostico-rotulo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2, 8px);
+  font-weight: 600;
+  font-size: var(--tipo-dado, 13px);
+}
+
+.at1-diagnostico-detalhe {
+  color: var(--texto-secundario, var(--texto-suave));
+  font-size: var(--tipo-legenda, 12px);
+}
+
+/* Desativação imediata de transições ao pular/movimento reduzido */
+.sem-animacao .at1-cursor,
+.sem-animacao .at1-codon,
+.sem-animacao .at1-base-foco,
+.sem-animacao .svg-troca .svg-base-caixa {
+  transition-duration: 0ms !important;
+  animation-duration: 0ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .at1-cursor,
+  .at1-codon,
+  .at1-base-foco {
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+  }
+}

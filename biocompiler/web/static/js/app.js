@@ -100,37 +100,78 @@ function inicializarMenu() {
 }
 
 function inicializarModo() {
-  const sel = qs('[data-campo="modo-reproducao"]');
-  if (!sel) return;
+  const grupo = qs('[data-campo="modo-reproducao"]');
+  if (!grupo) return;
+  const opcoes = Array.from(grupo.querySelectorAll('[role="radio"][data-modo]'));
+  const validos = ["rapido", "guiado", "animado"];
+
+  const aplicarModo = (valor, salvar = false) => {
+    const modo = validos.includes(valor) ? valor : "rapido";
+    grupo.setAttribute("data-valor", modo);
+    for (const btn of opcoes) {
+      const ativo = btn.getAttribute("data-modo") === modo;
+      btn.setAttribute("aria-checked", ativo ? "true" : "false");
+      btn.tabIndex = ativo ? 0 : -1;
+    }
+    if (salvar) {
+      try {
+        window.localStorage.setItem(CHAVE_MODO, modo);
+      } catch (e) {
+        // ignora
+      }
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set("modo", modo);
+        window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+      } catch (e) {
+        // ignora
+      }
+      grupo.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  };
+
   const paramModo = new URLSearchParams(window.location.search).get("modo");
-  if (paramModo && ["rapido", "guiado", "animado"].includes(paramModo)) {
-    sel.value = paramModo;
+  if (paramModo && validos.includes(paramModo)) {
+    aplicarModo(paramModo, false);
   } else {
     try {
       const salvo = window.localStorage.getItem(CHAVE_MODO);
-      if (salvo && ["rapido", "guiado", "animado"].includes(salvo)) {
-        sel.value = salvo;
-      }
+      aplicarModo(salvo && validos.includes(salvo) ? salvo : "rapido", false);
     } catch (e) {
-      // ignora
+      aplicarModo("rapido", false);
     }
   }
-  sel.addEventListener("change", () => {
-    try {
-      window.localStorage.setItem(CHAVE_MODO, sel.value);
-    } catch (e) {
-      // ignora
-    }
+
+  opcoes.forEach((btn, idx) => {
+    btn.addEventListener("click", () => aplicarModo(btn.getAttribute("data-modo"), true));
+    btn.addEventListener("keydown", (ev) => {
+      let prox = -1;
+      if (ev.key === "ArrowRight" || ev.key === "ArrowDown") {
+        prox = (idx + 1) % opcoes.length;
+      } else if (ev.key === "ArrowLeft" || ev.key === "ArrowUp") {
+        prox = (idx - 1 + opcoes.length) % opcoes.length;
+      }
+      if (prox >= 0) {
+        ev.preventDefault();
+        opcoes[prox].focus();
+        aplicarModo(opcoes[prox].getAttribute("data-modo"), true);
+      }
+    });
   });
 }
 
 export function obterModoAtual() {
+  const validos = ["rapido", "guiado", "animado"];
+  const grupo = qs('[data-campo="modo-reproducao"]');
+  const valorControle = grupo && (grupo.getAttribute("data-valor") || grupo.value);
+  if (valorControle && validos.includes(valorControle)) {
+    return valorControle;
+  }
   const paramModo = new URLSearchParams(window.location.search).get("modo");
-  if (paramModo && ["rapido", "guiado", "animado"].includes(paramModo)) {
+  if (paramModo && validos.includes(paramModo)) {
     return paramModo;
   }
-  const sel = qs('[data-campo="modo-reproducao"]');
-  return (sel && sel.value) || "rapido";
+  return "rapido";
 }
 
 export function movimentoReduzido() {

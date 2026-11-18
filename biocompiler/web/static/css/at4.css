@@ -82,6 +82,72 @@
   stroke-dasharray: 2 3;
 }
 
+[data-viz="at4"] .matriz-scroll {
+  cursor: grab;
+  user-select: none;
+}
+
+[data-viz="at4"] .matriz-scroll.arrastando {
+  cursor: grabbing;
+}
+
+.at4-lado-a-lado {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.at4-grade-comp {
+  border: 1px solid var(--borda);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  background: var(--superficie-1);
+}
+
+.at4-grade-comp-cab {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.at4-grade-comp-scroll {
+  overflow: auto;
+  max-height: 24rem;
+}
+
+.at4-comp-tabela {
+  border-collapse: collapse;
+  font-family: var(--fonte-mono);
+  font-size: 0.8rem;
+}
+
+.at4-comp-tabela th,
+.at4-comp-tabela td {
+  min-width: 2rem;
+  height: 1.9rem;
+  text-align: center;
+  border: 1px solid var(--borda);
+  padding: 0.15rem 0.25rem;
+}
+
+.at4-comp-cel {
+  cursor: pointer;
+}
+
+[data-viz="at4"] [data-coordenada-ativa="true"] {
+  outline: 2px solid var(--cor-alinhamento, #e09f24);
+  background: color-mix(in srgb, var(--cor-alinhamento, #e09f24) 24%, transparent);
+  font-weight: 700;
+}
+
+[data-viz="at4"] .inspetor-painel[data-superficie="vidro"] {
+  padding: var(--esp-4, 16px);
+  border-radius: var(--raio-medio, 10px);
+}
+
 @media (prefers-reduced-motion: reduce) {
   [data-viz="at4"] .tabela-matriz td,
   [data-viz="at4"] .tabela-matriz th {

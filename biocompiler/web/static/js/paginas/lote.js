@@ -1,6 +1,6 @@
 /* Controlador das páginas de lote AT1, AT2 e AT3 com player, visualizações SVG e inspetor. */
 
-import { ativarAba, definirStatus, registrarHistorico } from "../app.js";
+import { ativarAba, definirStatus, movimentoReduzido, registrarHistorico } from "../app.js";
 import { executarLote, exportarZip, obterCodigoGenetico, obterExemplos } from "../api.js";
 import { atualizarContadores, conectarZonaArquivo } from "../componentes/editor.js";
 import { criarEtapas } from "../componentes/etapas.js";
@@ -67,6 +67,64 @@ document.addEventListener("DOMContentLoaded", async () => {
   const regVis = qs('[data-regiao="visualizacao"]');
   const regListaArq = qs('[data-regiao="lista-artefatos"]');
 
+  window.addEventListener("pagereveal", (ev) => {
+    if (movimentoReduzido() && ev.viewTransition && typeof ev.viewTransition.skipTransition === "function") {
+      ev.viewTransition.skipTransition();
+    }
+  });
+
+  const paramsInit = new URLSearchParams(window.location.search);
+  const origemParam = paramsInit.get("origem");
+  const barraFluxo = el("div", { class: "barra-fluxo-at" });
+  const slotOrigem = el("div");
+  const slotEnvio = el("div");
+  barraFluxo.appendChild(slotOrigem);
+  barraFluxo.appendChild(slotEnvio);
+
+  if (origemParam === "at1" || origemParam === "at2") {
+    slotOrigem.appendChild(el("span", {
+      class: "chip-origem",
+      "data-regiao": "origem",
+      text: origemParam === "at1" ? "Recebido do BioCompiler 1.0" : "Recebido do BioCompiler 2.0",
+    }));
+  }
+  const statusEl = qs('[data-regiao="status"]');
+  if (statusEl && statusEl.parentElement) {
+    statusEl.parentElement.insertBefore(barraFluxo, statusEl.nextSibling);
+  } else if (regResultados && regResultados.parentElement) {
+    regResultados.parentElement.insertBefore(barraFluxo, regResultados);
+  }
+
+  function atualizarEnvioProxima(reg) {
+    limpar(slotEnvio);
+    if (!reg || reg.status !== "OK" || !reg.dados) return;
+    if (at === "at1" && reg.dados.pre_mrna) {
+      const q = new URLSearchParams({
+        seq: reg.dados.pre_mrna,
+        origem: "at1",
+        executar: "1",
+      });
+      slotEnvio.appendChild(el("a", {
+        class: "btn btn-primario",
+        "data-acao": "enviar-proxima",
+        href: `/at2?${q.toString()}`,
+        text: "Enviar para BioCompiler 2.0 →",
+      }));
+    } else if (at === "at2" && reg.dados.mrna_maduro) {
+      const q = new URLSearchParams({
+        seq: reg.dados.mrna_maduro,
+        origem: "at2",
+        executar: "1",
+      });
+      slotEnvio.appendChild(el("a", {
+        class: "btn btn-primario",
+        "data-acao": "enviar-proxima",
+        href: `/at3?${q.toString()}`,
+        text: "Enviar para o Ribossomo →",
+      }));
+    }
+  }
+
   renderizarListaArtefatos(regListaArq, at);
 
   const atualizar = () => atualizarContadores(textarea.value, contadores, alfabeto);
@@ -128,7 +186,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     limpar(regVis);
     const slotPlayer = el("div");
     const slotViz = el("div");
-    const slotInspetor = el("aside", { class: "inspetor-painel", "data-regiao": "inspetor" });
+    const slotInspetor = el("aside", {
+      class: "inspetor-painel",
+      "data-regiao": "inspetor",
+      "data-superficie": "vidro",
+    });
     regVis.appendChild(slotPlayer);
     regVis.appendChild(el("div", { class: "viz-grade" }, [slotViz, slotInspetor]));
 
@@ -160,6 +222,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         inspetorCtrl.definirContexto(sequenciaReferencia(at, reg), reg.passos);
         vizCtrl.definirRegistro(reg);
         playerCtrl.selecionarRegistro(idx);
+        atualizarEnvioProxima(reg);
       },
       onPasso: (k, passos) => {
         if (vizCtrl) vizCtrl.atualizar(k, passos);
@@ -187,6 +250,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         inspetorCtrl.definirContexto(sequenciaReferencia(at, primeiro), primeiro.passos);
         vizCtrl.definirRegistro(primeiro);
         playerCtrl.definirRegistros(itens, 0);
+        atualizarEnvioProxima(primeiro);
+      } else {
+        atualizarEnvioProxima(null);
       }
       const ok = itens.filter((i) => i.status === "OK").length;
       definirStatus(`Concluído: ${itens.length} registro(s), ${ok} correto(s).`, ok === itens.length ? "ok" : "");

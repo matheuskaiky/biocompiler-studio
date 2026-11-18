@@ -35,6 +35,49 @@ export function atualizarContadores(texto, container, alfabetoPermitido) {
   }
 }
 
+export function extrairParSequencias(texto) {
+  const bruto = String(texto || "").replace(/\\n/g, "\n").replace(/\r\n/g, "\n");
+  const linhas = bruto.split("\n").map((l) => l.trim()).filter(Boolean);
+  if (!linhas.length) return ["", ""];
+  if (linhas[0].startsWith(">")) {
+    const seqs = [];
+    let atual = [];
+    for (const l of linhas) {
+      if (l.startsWith(">")) {
+        if (atual.length) seqs.push(atual.join(""));
+        atual = [];
+      } else {
+        atual.push(l);
+      }
+    }
+    if (atual.length) seqs.push(atual.join(""));
+    return [seqs[0] || "", seqs[1] || ""];
+  }
+  return [linhas[0] || "", linhas[1] || ""];
+}
+
+export function conectarSegmentoMetodo(segmento, selectEl) {
+  if (!segmento || !selectEl) return;
+  const botoes = Array.from(segmento.querySelectorAll("[data-valor]"));
+  const sincronizar = (valor) => {
+    for (const b of botoes) {
+      const ativo = b.getAttribute("data-valor") === valor;
+      b.setAttribute("aria-pressed", ativo ? "true" : "false");
+    }
+  };
+  sincronizar(selectEl.value || "both");
+  for (const b of botoes) {
+    b.addEventListener("click", () => {
+      const val = b.getAttribute("data-valor");
+      if (!val) return;
+      selectEl.value = val;
+      sincronizar(val);
+      selectEl.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+  }
+  selectEl.addEventListener("change", () => sincronizar(selectEl.value));
+}
+
 export function conectarZonaArquivo(zona, inputArquivo, aoLerTexto) {
   if (inputArquivo) {
     inputArquivo.addEventListener("change", async () => {
@@ -45,6 +88,10 @@ export function conectarZonaArquivo(zona, inputArquivo, aoLerTexto) {
     });
   }
   if (zona) {
+    const btnImportar = zona.querySelector('[data-acao="importar"]');
+    if (btnImportar && inputArquivo) {
+      btnImportar.addEventListener("click", () => inputArquivo.click());
+    }
     zona.addEventListener("dragover", (ev) => {
       ev.preventDefault();
       zona.classList.add("arrastando");

@@ -114,6 +114,27 @@ class TestAT4Extras(BaseViz):
                       ".getAttribute('data-grade-metodo'), c.getAttribute('data-i'), c.getAttribute('data-j')])")
         self.assertEqual(sorted(sel), [["global", "3", "4"], ["local", "3", "4"]])
 
+    def test_lado_a_lado_indisponivel_acima_do_limite(self):
+        """Premissa da OS: acima de 10 000 células por método, avisar (laudo A1, R1)."""
+        a = "ACGT" * 25  # 101 × 101 = 10 201 células por método
+        self.executar("/at4", {"seq1": a, "seq2": a, "metodo": "both", "modo": "rapido"}, prazo=90)
+        for _ in range(20):
+            aviso = self.js("(() => { const e = document.querySelector('[data-viz=at4] [data-aviso=lado-a-lado]');"
+                            " if (!e) return null; const r = e.getBoundingClientRect();"
+                            " return [r.width > 0 && r.height > 0, e.textContent]; })()")
+            if aviso:
+                break
+            self.pausa(150)
+        self.assertIsNotNone(aviso, "aviso [data-aviso=lado-a-lado] ausente acima do limite")
+        self.assertTrue(aviso[0], "aviso visível")
+        self.assertIn("lado a lado", aviso[1].lower())
+        self.assertRegex(aviso[1], r"10[\s.  ]?000", "o aviso informa o limite")
+        self.assertEqual(self.js("document.querySelectorAll('[data-viz=at4] [data-grade-metodo]').length"), 0,
+                         "nenhuma grade lado a lado é montada acima do limite")
+        botao = self.js("(() => { const b = document.querySelector('[data-viz=at4] [data-acao=lado-a-lado]');"
+                        " return b ? b.disabled || b.getAttribute('aria-disabled') === 'true' : null; })()")
+        self.assertIn(botao, (None, True), "se o botão existir, fica desabilitado")
+
 
 if __name__ == "__main__":
     unittest.main()

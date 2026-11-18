@@ -2,7 +2,12 @@
 
 import { ativarAba, definirStatus, registrarHistorico } from "../app.js";
 import { executarAll, exportarZip, obterExemplos } from "../api.js";
-import { atualizarContadores, conectarZonaArquivo } from "../componentes/editor.js";
+import {
+  atualizarContadores,
+  conectarSegmentoMetodo,
+  conectarZonaArquivo,
+  extrairParSequencias,
+} from "../componentes/editor.js";
 import { renderizarComparadorLab } from "../componentes/comparador_lab.js";
 import { renderizarMapaLab } from "../componentes/mapa_lab.js";
 import { criarLabMutacoes } from "../componentes/mutacoes_lab.js";
@@ -37,8 +42,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   s1El.addEventListener("input", () => { textoArquivo = null; atualizar(); });
   s2El.addEventListener("input", () => { textoArquivo = null; atualizar(); });
 
+  conectarSegmentoMetodo(qs('[data-segmento-metodo]'), metEl);
+
   conectarZonaArquivo(zonaArq, inputArq, (texto, nome) => {
     textoArquivo = texto;
+    const [a, b] = extrairParSequencias(texto);
+    if (a || b) {
+      s1El.value = a;
+      s2El.value = b;
+      atualizar();
+    }
     definirStatus(`Arquivo carregado: ${nome}`);
   });
 

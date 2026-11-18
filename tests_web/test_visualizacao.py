@@ -777,7 +777,7 @@ class TestParidadeAleatoria(BaseViz):
             with self.subTest(seq=seq):
                 consulta = ("Array.from(document.querySelectorAll('[data-viz=at3] [data-cadeia] "
                             "[data-aminoacido]')).map(e => e.textContent.trim())")
-                for _ in range(20):  # aguarda a renderização (sem afrouxar a asserção)
+                for _ in range(60):  # aguarda a renderização sob carga (sem afrouxar a asserção)
                     aa = self.js(consulta)
                     if aa:
                         break

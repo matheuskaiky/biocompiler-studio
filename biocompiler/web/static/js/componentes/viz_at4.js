@@ -19,13 +19,41 @@ export function criarVizAT4(conteiner) {
   let cursor = { i: 0, j: 0 };
   let zoom = 1;
   let chaveSeqMontada = null;
+  let todosAlinhamentos = [];
+  let ladoALadoAtivo = false;
+  let coordAtivaLadoALado = null;
 
   let palcoEl = null;
   let celulasDom = [];
   let gradeEmbrulho = null;
+  let scrollMatrizEl = null;
+  let ladoALadoEl = null;
+  let botaoLadoALadoEl = null;
   let svgSetas = null;
   let svgDeps = null;
   let zoomLabelEl = null;
+
+  let arrasteEstado = null;
+  if (typeof window !== "undefined") {
+    window.addEventListener("mousemove", (ev) => {
+      if (!arrasteEstado) return;
+      const dx = ev.clientX - arrasteEstado.x;
+      const dy = ev.clientY - arrasteEstado.y;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) arrasteEstado.moveu = true;
+      arrasteEstado.el.scrollLeft = arrasteEstado.sl - dx;
+      arrasteEstado.el.scrollTop = arrasteEstado.st - dy;
+    });
+    window.addEventListener("mouseup", () => {
+      if (!arrasteEstado) return;
+      const { el: sc, moveu } = arrasteEstado;
+      arrasteEstado = null;
+      sc.classList.remove("arrastando");
+      if (moveu) {
+        sc.dataset.arrasteRecente = "1";
+        setTimeout(() => { delete sc.dataset.arrasteRecente; }, 0);
+      }
+    });
+  }
   let regPreenchimento = null;
   let regCelulaAtual = null;
   let regAlinhamento = null;
@@ -430,10 +458,108 @@ export function criarVizAT4(conteiner) {
     if (btnTudo) btnTudo.disabled = esgotado;
   }
 
+  function obterParLadoALado() {
+    const porMetodo = new Map();
+    for (const item of todosAlinhamentos) {
+      const m = item && item.dados ? item.dados.metodo : null;
+      if ((m === "local" || m === "global") && !porMetodo.has(m)) {
+        porMetodo.set(m, item);
+      }
+    }
+    if (!porMetodo.has("local") || !porMetodo.has("global")) return null;
+    return { local: porMetodo.get("local"), global: porMetodo.get("global") };
+  }
+
+  function destacarCoordLadoALado(i, j) {
+    coordAtivaLadoALado = { i, j };
+    if (!ladoALadoEl) return;
+    ladoALadoEl.querySelectorAll("[data-coordenada-ativa]").forEach((td) => {
+      td.removeAttribute("data-coordenada-ativa");
+    });
+    ladoALadoEl.querySelectorAll(`[data-celula][data-i="${i}"][data-j="${j}"]`).forEach((td) => {
+      td.setAttribute("data-coordenada-ativa", "true");
+    });
+  }
+
+  function construirTabelaComparacao(item, metodo) {
+    const dados = item && item.dados ? item.dados : {};
+    const matriz = dados.matriz || [];
+    const seq1 = dados.seq1 || "";
+    const seq2 = dados.seq2 || "";
+    const total = matriz.length * (matriz[0] ? matriz[0].length : 0);
+    const secao = el("section", { class: "at4-grade-comp", "data-grade-metodo": metodo }, [
+      el("header", { class: "at4-grade-comp-cab" }, [
+        el("strong", { text: metodo === "local" ? "Local (Smith–Waterman)" : "Global (Needleman–Wunsch)" }),
+        el("span", { class: "badge", text: `Score ${dados.score ?? "—"}` }),
+      ]),
+    ]);
+    if (total > 10000) {
+      secao.appendChild(el("p", {
+        class: "texto-suave",
+        text: `Grade com ${total.toLocaleString("pt-BR")} células excede o limite de 10 000 células para comparação lado a lado.`,
+      }));
+      return secao;
+    }
+    const tbody = el("tbody");
+    const trCab = el("tr", {}, [el("th", { text: "" }), el("th", { text: "−" })]);
+    for (let j = 0; j < seq2.length; j += 1) {
+      trCab.appendChild(el("th", { text: seq2[j] }));
+    }
+    const thead = el("thead", {}, [trCab]);
+    for (let i = 0; i < matriz.length; i += 1) {
+      const tr = el("tr");
+      tr.appendChild(el("th", { text: i === 0 ? "−" : (seq1[i - 1] || "") }));
+      const linha = matriz[i] || [];
+      for (let j = 0; j < linha.length; j += 1) {
+        const val = linha[j];
+        const td = el("td", {
+          class: "at4-comp-cel",
+          "data-celula": "",
+          "data-i": String(i),
+          "data-j": String(j),
+          text: String(val),
+          onClick: () => destacarCoordLadoALado(i, j),
+        });
+        if (coordAtivaLadoALado && coordAtivaLadoALado.i === i && coordAtivaLadoALado.j === j) {
+          td.setAttribute("data-coordenada-ativa", "true");
+        }
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+    const scroll = el("div", { class: "at4-grade-comp-scroll" }, [
+      el("table", { class: "at4-comp-tabela" }, [thead, tbody]),
+    ]);
+    secao.appendChild(scroll);
+    return secao;
+  }
+
+  function atualizarLadoALado() {
+    if (!ladoALadoEl) return;
+    limpar(ladoALadoEl);
+    const par = obterParLadoALado();
+    if (botaoLadoALadoEl) {
+      botaoLadoALadoEl.hidden = !par;
+      botaoLadoALadoEl.setAttribute("aria-pressed", String(Boolean(par && ladoALadoAtivo)));
+    }
+    if (!par || !ladoALadoAtivo) {
+      ladoALadoEl.hidden = true;
+      if (scrollMatrizEl) scrollMatrizEl.hidden = false;
+      return;
+    }
+    ladoALadoEl.hidden = false;
+    if (scrollMatrizEl) scrollMatrizEl.hidden = true;
+    ladoALadoEl.appendChild(construirTabelaComparacao(par.local, "local"));
+    ladoALadoEl.appendChild(construirTabelaComparacao(par.global, "global"));
+  }
+
   function construirCena() {
     limpar(conteiner);
     celulasDom = [];
     gradeEmbrulho = null;
+    scrollMatrizEl = null;
+    ladoALadoEl = null;
+    botaoLadoALadoEl = null;
     svgSetas = null;
     svgDeps = null;
     palcoEl = null;
@@ -550,6 +676,13 @@ export function criarVizAT4(conteiner) {
         },
       });
       palco.appendChild(regCursor);
+      if (obterParLadoALado()) {
+        palco.appendChild(el("p", {
+          class: "barra-status",
+          "data-aviso": "lado-a-lado",
+          text: `Vista lado a lado indisponível acima de 10 000 células por método (${total.toLocaleString("pt-BR")} células; modo Canvas ativo).`,
+        }));
+      }
       palco.appendChild(el("div", { class: "matriz-scroll" }, [canvasEl]));
     } else {
       const seq1 = dados.seq1 || "";
@@ -632,9 +765,23 @@ export function criarVizAT4(conteiner) {
       };
 
       zoomLabelEl = el("span", { class: "chip mono", text: `${Math.round(zoom * 100)}%` });
+      const temPar = Boolean(obterParLadoALado());
+      botaoLadoALadoEl = el("button", {
+        type: "button",
+        class: "btn btn-pequeno",
+        "data-acao": "lado-a-lado",
+        "aria-pressed": String(ladoALadoAtivo),
+        hidden: !temPar,
+        text: "Lado a lado",
+        onClick: () => {
+          ladoALadoAtivo = !ladoALadoAtivo;
+          atualizarLadoALado();
+        },
+      });
       palco.appendChild(el("div", { class: "at4-barra-zoom" }, [
-        el("span", { class: "texto-suave", text: "Clique em uma célula para inspecionar dependências." }),
+        el("span", { class: "texto-suave", text: "Clique em uma célula para inspecionar dependências ou arraste a grade." }),
         el("div", { class: "at4-zoom-controles" }, [
+          botaoLadoALadoEl,
           el("button", {
             type: "button",
             class: "btn btn-pequeno",
@@ -667,18 +814,41 @@ export function criarVizAT4(conteiner) {
       }
 
       const scrollMatriz = el("div", { class: "matriz-scroll" }, [gradeEmbrulho]);
+      scrollMatrizEl = scrollMatriz;
+      scrollMatriz.addEventListener("mousedown", (ev) => {
+        if (ev.button !== 0) return;
+        arrasteEstado = {
+          el: scrollMatriz,
+          x: ev.clientX,
+          y: ev.clientY,
+          sl: scrollMatriz.scrollLeft,
+          st: scrollMatriz.scrollTop,
+          moveu: false,
+        };
+        scrollMatriz.classList.add("arrastando");
+      });
+      scrollMatriz.addEventListener("click", (ev) => {
+        if (scrollMatriz.dataset.arrasteRecente === "1") {
+          ev.stopPropagation();
+          ev.preventDefault();
+          delete scrollMatriz.dataset.arrasteRecente;
+        }
+      }, true);
       scrollMatriz.addEventListener("wheel", (ev) => {
         if (!ev.ctrlKey) return;
         ev.preventDefault();
         aplicarZoom(zoom + (ev.deltaY < 0 ? 0.15 : -0.15));
       }, { passive: false });
       palco.appendChild(scrollMatriz);
+      ladoALadoEl = el("div", { class: "at4-lado-a-lado", hidden: true });
+      palco.appendChild(ladoALadoEl);
+      atualizarLadoALado();
     }
 
     regAlinhamento = el("div", { "data-regiao": "alinhamento-viz" });
     palco.appendChild(regAlinhamento);
 
-    regInspetor = el("aside", { class: "inspetor-painel", "data-regiao": "inspetor-celula" }, [
+    regInspetor = el("aside", { class: "inspetor-painel", "data-regiao": "inspetor-celula", "data-superficie": "vidro" }, [
       el("h3", { text: "Inspetor de célula" }),
       el("p", { class: "texto-suave", text: "Clique ou use as setas e Enter em qualquer célula para consultar /api/at4/celula." }),
     ]);
@@ -686,10 +856,15 @@ export function criarVizAT4(conteiner) {
     conteiner.appendChild(el("div", { class: "viz-grade" }, [palco, regInspetor]));
   }
 
-  function definirAlinhamento(novoEnv, novosParams) {
+  function definirAlinhamento(novoEnv, novosParams, novosItens) {
     const dados = novoEnv && novoEnv.dados ? novoEnv.dados : {};
     const { total } = calcularTamanho(dados);
     const novaChave = `${dados.seq1 || ""}|${dados.seq2 || ""}`;
+    if (Array.isArray(novosItens) && novosItens.length) {
+      todosAlinhamentos = novosItens;
+    } else if (!todosAlinhamentos.length && novoEnv) {
+      todosAlinhamentos = [novoEnv];
+    }
     const podeReusar = Boolean(
       gradeEmbrulho
       && total <= LIMITE_GRADE_DOM
@@ -706,8 +881,11 @@ export function criarVizAT4(conteiner) {
     if (podeReusar) {
       if (palcoEl) palcoEl.setAttribute("data-alinhamento", dados.metodo || "");
       if (svgDeps) limpar(svgDeps);
+      atualizarLadoALado();
       return;
     }
+    ladoALadoAtivo = false;
+    coordAtivaLadoALado = null;
     construirCena();
   }
 

@@ -1,0 +1,65 @@
+/* Liquid Glass seletivo: apenas em barras e controles flutuantes ([data-superficie="vidro"]). */
+
+[data-fundo-ambiente] {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(62% 52% at 14% 12%, var(--ambiente-1) 0%, transparent 72%),
+    radial-gradient(54% 48% at 88% 82%, var(--ambiente-2) 0%, transparent 70%);
+}
+
+.vidro,
+[data-superficie="vidro"] {
+  background-color: var(--vidro-fundo);
+  background-image: linear-gradient(
+    180deg,
+    var(--vidro-realce) 0%,
+    transparent 52%
+  );
+  -webkit-backdrop-filter: blur(var(--vidro-desfoque)) saturate(175%);
+  backdrop-filter: blur(var(--vidro-desfoque)) saturate(175%);
+  border-color: var(--vidro-borda);
+  box-shadow: var(--vidro-especular), var(--elevacao-2);
+}
+
+[data-superficie="vidro"][data-vidro="espesso"] {
+  background-color: var(--vidro-fundo-espesso);
+  box-shadow: var(--vidro-especular), var(--elevacao-3);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  [data-fundo-ambiente] {
+    display: none;
+    background-image: none;
+  }
+
+  .vidro,
+  [data-superficie="vidro"],
+  [data-superficie="vidro"][data-vidro="espesso"] {
+    background-color: var(--vidro-fundo-opaco);
+    background-image: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  [data-fundo-ambiente] {
+    display: none;
+    background-image: none;
+  }
+
+  .vidro,
+  [data-superficie="vidro"],
+  [data-superficie="vidro"][data-vidro="espesso"] {
+    background-color: var(--vidro-fundo-opaco);
+    background-image: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}

@@ -101,22 +101,28 @@ Ao executar sem `--no-save`, os artefatos são gravados em UTF-8 na pasta de sa�
 
 ## Interface web
 
-A interface web é **opcional** e utiliza os mesmos serviços Python da CLI (`biocompiler/servicos.py`), sem reimplementar regras biológicas no navegador.
+A interface web é **opcional** e utiliza os mesmos serviços Python da CLI (`biocompiler/servicos.py`), sem reimplementar regras biológicas no navegador (decisão **D021** e plano diretor em [`docs/FRONTEND_DESIGN_PLAN.md`](docs/FRONTEND_DESIGN_PLAN.md)).
 
 ```text
 python3 main.py serve --port 8765
 ```
 
-Acesse `http://127.0.0.1:8765/`. Rotas disponíveis:
+Acesse `http://127.0.0.1:8765/`. Navegação principal e rotas disponíveis:
 
-- `/` — Laboratório Completo (`all`: Mapa da expressão gênica, Comparador molecular, Laboratório de mutações e Relatório final)
-- `/at1` — AT1 · Transcrição
-- `/at2` — AT2 · Maturação / Splicing
-- `/at3` — AT3 · Tradução
-- `/at4` — AT4 · Alinhamento (Smith–Waterman e Needleman–Wunsch com matriz e traceback animados)
-- `/casos` — Casos de Teste dos enunciados
-- `/historico` — Histórico local da sessão
-- `/sobre` — Sobre / Metodologia
+- `/` — **Laboratório Completo** (`all`: Mapa da expressão gênica com expansão contextual via **Detalhar**, **Comparador molecular** em `/?aba=comparador`, Laboratório de mutações e Relatório final)
+- `/at1` — **BioCompiler 1.0** (Transcrição: cursor científico deslizante, trincas a partir do START, pré-mRNA nascendo da fita de DNA com `T → U` e diagnóstico só em posições determinadas pela API)
+- `/at2` — **BioCompiler 2.0** (Splicing e maturação: remoção do íntron na mesma fita com aproximação dos éxons, régua D009, quepe `m7Gppp` no 5′, cauda `A×100` expansível no 3′ e legenda removido/preservado/adicionado)
+- `/at3` — **Ribossomo** (Tradução: ribossomo avançando de 3 em 3 bases, cadeia polipeptídica e seleção sincronizada códon ↔ aminoácido)
+- `/at4` — **Alinhamento** (Smith–Waterman e Needleman–Wunsch: preenchimento com dependências SVG, inspetor de célula, traceback diferenciado, zoom/arraste e comparação **lado a lado** entre Local e Global)
+- `/casos` — **Casos de Teste** dos enunciados
+- `/historico` — **Histórico** local da sessão
+- `/sobre` — **Sobre** / Metodologia
+
+Recursos da interface (D021):
+
+- **Liquid Glass seletivo e fallbacks:** material translúcido restrito à barra superior, barra do player e diálogos (`[data-superficie="vidro"]`), mantendo dados (fitas, matrizes e tabelas) em superfícies opacas. Em navegadores sem `backdrop-filter` ou com **transparência reduzida** (`prefers-reduced-transparency: reduce`), aplica fundo opaco equivalente.
+- **Player, linha do tempo e modos:** barra flutuante com **linha do tempo** arrastável e acessível (`role="slider"` com marcos por tipo de evento), controle de velocidade (`0,5×`–`4×`), botão **Pular para o resultado** com cancelamento imediato e controle segmentado de **Modo** (`Rápido`, `Guiado`, `Animado`). Com **movimento reduzido** (`prefers-reduced-motion: reduce`), as transições apresentam diretamente o estado final.
+- **Fluxo entre etapas e apresentação:** botões **Enviar para BioCompiler 2.0** (AT1 → AT2) e **Enviar para o Ribossomo** (AT2 → AT3) transferem o produto gerado para a etapa seguinte; o modo **Apresentação** oculta a barra lateral e amplia a tipografia.
 
 ## Testes
 

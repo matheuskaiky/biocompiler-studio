@@ -1,0 +1,164 @@
+/* Coreografia científica da AT2 (splicing na mesma fita, CAP 5', cauda 3' e maturação). */
+
+.at2-palco-fita {
+  position: relative;
+  display: inline-block;
+  min-width: 100%;
+}
+
+/* Bases móveis na mesma fita: íntrons se erguem/esmaecem e éxons deslizam até se unir */
+.at2-base-movel {
+  transition-property: transform, opacity;
+  transition-duration: var(--dur-at2-longa, var(--dur-longa, 450ms)), var(--dur-at2-media, var(--dur-media, 300ms));
+  transition-timing-function: var(--curva-padrao, cubic-bezier(0.25, 0.1, 0.25, 1));
+  will-change: transform, opacity;
+}
+
+.at2-base-intron-removida {
+  opacity: 0.28;
+}
+
+.at2-intron-bloco[data-estado="removido"] {
+  transform: translateY(-50px);
+  opacity: 0.35;
+}
+
+.at2-base-intron-selecionada .svg-base-caixa {
+  stroke: var(--cor-splicing, #8b7ae8);
+  stroke-width: 1.6;
+  fill: color-mix(in srgb, var(--cor-splicing, #8b7ae8) 14%, var(--superficie));
+}
+
+/* CAP 5' encaixada na extremidade esquerda da fita */
+.at2-cap {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: var(--raio-pequeno, 6px);
+  font-family: var(--fonte-mono, ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--texto);
+  background: var(--selo-ok-bg, #172e26);
+  border: 1.5px solid var(--cor-mrna, #20c997);
+  transition-property: transform, opacity;
+  transition-duration: var(--dur-at2-media, var(--dur-media, 300ms)), var(--dur-at2-curta, var(--dur-curta, 200ms));
+  transition-timing-function: var(--curva-mola-suave, cubic-bezier(0.22, 1.12, 0.36, 1)),
+    var(--curva-padrao, cubic-bezier(0.25, 0.1, 0.25, 1));
+  white-space: nowrap;
+  z-index: 2;
+}
+
+.at2-cap[data-visivel="false"] {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-14px) scale(0.92);
+}
+
+.at2-cap[data-visivel="true"] {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+}
+
+/* Cauda poli-A encostada na extremidade 3' da fita */
+.at2-cauda-grupo {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2, 8px);
+  height: 26px;
+  transform-origin: left center;
+  transition-property: transform, opacity;
+  transition-duration: var(--dur-at2-media, var(--dur-media, 300ms)), var(--dur-at2-curta, var(--dur-curta, 200ms));
+  transition-timing-function: var(--curva-entrada, cubic-bezier(0.16, 1, 0.3, 1)),
+    var(--curva-padrao, cubic-bezier(0.25, 0.1, 0.25, 1));
+  z-index: 2;
+}
+
+.at2-cauda-grupo[data-visivel="false"] {
+  opacity: 0;
+  pointer-events: none;
+  transform: scaleX(0.35);
+}
+
+.at2-cauda-grupo[data-visivel="true"] {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.at2-cauda {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: var(--raio-pequeno, 6px);
+  font-family: var(--fonte-mono, ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--texto);
+  background: var(--selo-ok-bg, #172e26);
+  border: 1px solid var(--base-a, #34d399);
+  white-space: nowrap;
+}
+
+/* Legenda final: removido / preservado / adicionado */
+.at2-legenda-maturacao {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--esp-2, 8px);
+}
+
+.at2-legenda-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--esp-2, 8px) var(--esp-3, 12px);
+  border-radius: var(--raio-pequeno, 6px);
+  background: var(--superficie-dados, var(--superficie));
+  border: 1px solid var(--separador, var(--borda));
+  border-left: 3px solid var(--separador, var(--borda));
+  font-size: var(--tipo-legenda, 12px);
+}
+
+.at2-legenda-item[data-categoria="removido"] {
+  border-left-color: var(--cor-erro, #e5534b);
+}
+
+.at2-legenda-item[data-categoria="preservado"] {
+  border-left-color: var(--cor-splicing, #8b7ae8);
+}
+
+.at2-legenda-item[data-categoria="adicionado"] {
+  border-left-color: var(--cor-mrna, #20c997);
+}
+
+.at2-legenda-titulo {
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.at2-legenda-valor {
+  font-family: var(--fonte-mono, ui-monospace, monospace);
+  color: var(--texto-secundario, var(--texto-suave));
+}
+
+.sem-animacao .at2-base-movel,
+.sem-animacao .at2-cap,
+.sem-animacao .at2-cauda-grupo,
+.sem-animacao .intron-bloco {
+  transition-duration: 0ms !important;
+  animation-duration: 0ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .at2-base-movel,
+  .at2-cap,
+  .at2-cauda-grupo,
+  .intron-bloco {
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+  }
+}

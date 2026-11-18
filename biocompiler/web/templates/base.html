@@ -8,15 +8,25 @@
   <link rel="stylesheet" href="/static/css/tokens.css">
   <link rel="stylesheet" href="/static/css/layout.css">
   <link rel="stylesheet" href="/static/css/componentes.css">
+  <link rel="stylesheet" href="/static/css/vidro.css">
+  <link rel="stylesheet" href="/static/css/movimento.css">
+  <link rel="stylesheet" href="/static/css/motor.css">
+  <link rel="stylesheet" href="/static/css/at1.css">
+  <link rel="stylesheet" href="/static/css/at2.css">
+  <link rel="stylesheet" href="/static/css/at3.css">
+  <link rel="stylesheet" href="/static/css/at4.css">
+  <link rel="stylesheet" href="/static/css/transicoes.css">
+  <link rel="stylesheet" href="/static/css/lab.css">
   <script src="/static/js/tema.js"></script>
   <script type="module" src="/static/js/app.js"></script>
   {% block scripts %}{% endblock %}
 </head>
 <body data-pagina="{{ pagina }}">
+  <div class="fundo-ambiente" data-fundo-ambiente aria-hidden="true"></div>
   <a href="#conteudo" class="pular-conteudo">Pular para o conteúdo</a>
 
   <div class="casca">
-    <aside id="barra-lateral" class="barra-lateral">
+    <aside id="barra-lateral" class="barra-lateral" data-superficie="vidro">
       <a href="/" class="marca">
         <img src="/static/img/logo-helice.svg" alt="" width="36" height="36">
         <span>
@@ -29,44 +39,72 @@
         <div class="nav-grupo">
           <div class="nav-titulo">Laboratório</div>
           <a href="/" class="nav-link" {% if atual == "/" %}aria-current="page"{% endif %}>
-            <span class="ponto ponto-dna" aria-hidden="true"></span>
-            Laboratório Completo
+            <svg class="nav-icone" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5"/></svg>
+            <span class="nav-texto">
+              <span class="nav-rotulo">Laboratório Completo</span>
+              <span class="nav-sub">AT1–AT4 integradas</span>
+            </span>
+          </a>
+          <a href="/?aba=comparador" class="nav-link">
+            <svg class="nav-icone" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="6" x2="16" y2="6"/><line x1="4" y1="14" x2="16" y2="14"/><path d="M8 6v8M12 6v8"/></svg>
+            <span class="nav-texto">
+              <span class="nav-rotulo">Comparador molecular</span>
+              <span class="nav-sub">Seq1 × Seq2 por nível</span>
+            </span>
           </a>
         </div>
 
         <div class="nav-grupo">
           <div class="nav-titulo">Atividades</div>
           <a href="/at1" class="nav-link" {% if atual == "/at1" %}aria-current="page"{% endif %}>
-            <span class="ponto ponto-pre" aria-hidden="true"></span>
-            AT1 · Transcrição
+            <svg class="nav-icone" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h12M4 14h12"/><path d="M7 10h6M11 8l2 2-2 2"/></svg>
+            <span class="nav-texto">
+              <span class="nav-rotulo">BioCompiler 1.0</span>
+              <span class="nav-sub">Transcrição</span>
+            </span>
           </a>
           <a href="/at2" class="nav-link" {% if atual == "/at2" %}aria-current="page"{% endif %}>
-            <span class="ponto ponto-spl" aria-hidden="true"></span>
-            AT2 · Maturação
+            <svg class="nav-icone" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l3-6 3 6h4"/></svg>
+            <span class="nav-texto">
+              <span class="nav-rotulo">BioCompiler 2.0</span>
+              <span class="nav-sub">Splicing e maturação</span>
+            </span>
           </a>
           <a href="/at3" class="nav-link" {% if atual == "/at3" %}aria-current="page"{% endif %}>
-            <span class="ponto ponto-trad" aria-hidden="true"></span>
-            AT3 · Tradução
+            <svg class="nav-icone" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="10" r="2.2"/><circle cx="10.5" cy="10" r="2.2"/><circle cx="15" cy="10" r="2.2"/></svg>
+            <span class="nav-texto">
+              <span class="nav-rotulo">Ribossomo</span>
+              <span class="nav-sub">Tradução</span>
+            </span>
           </a>
           <a href="/at4" class="nav-link" {% if atual == "/at4" %}aria-current="page"{% endif %}>
-            <span class="ponto ponto-alin" aria-hidden="true"></span>
-            AT4 · Alinhamento
+            <svg class="nav-icone" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="14" height="14" rx="2"/><path d="M3 8h14M8 3v14M6 6l8 8"/></svg>
+            <span class="nav-texto">
+              <span class="nav-rotulo">Alinhamento</span>
+              <span class="nav-sub">Smith–Waterman e Needleman–Wunsch</span>
+            </span>
           </a>
         </div>
 
         <div class="nav-grupo">
           <div class="nav-titulo">Recursos</div>
           <a href="/casos" class="nav-link" {% if atual == "/casos" %}aria-current="page"{% endif %}>
-            <span class="ponto ponto-mrna" aria-hidden="true"></span>
-            Casos de Teste
+            <svg class="nav-icone" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h10v12H5z"/><path d="M8 8h4M8 12h4"/></svg>
+            <span class="nav-texto">
+              <span class="nav-rotulo">Casos de Teste</span>
+            </span>
           </a>
           <a href="/historico" class="nav-link" {% if atual == "/historico" %}aria-current="page"{% endif %}>
-            <span class="ponto ponto-dna" aria-hidden="true"></span>
-            Histórico local
+            <svg class="nav-icone" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><path d="M10 6.5v4l2.5 1.5"/></svg>
+            <span class="nav-texto">
+              <span class="nav-rotulo">Histórico</span>
+            </span>
           </a>
           <a href="/sobre" class="nav-link" {% if atual == "/sobre" %}aria-current="page"{% endif %}>
-            <span class="ponto ponto-mrna" aria-hidden="true"></span>
-            Sobre/Metodologia
+            <svg class="nav-icone" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><path d="M10 9.5v4M10 6.8h.01"/></svg>
+            <span class="nav-texto">
+              <span class="nav-rotulo">Sobre</span>
+            </span>
           </a>
         </div>
       </nav>
@@ -77,7 +115,7 @@
     </aside>
 
     <div class="area-principal">
-      <header class="barra-topo">
+      <header class="barra-topo" data-superficie="vidro">
         <div class="topo-esquerda">
           <button
             type="button"
@@ -95,14 +133,21 @@
         </div>
 
         <div class="topo-acoes">
-          <label class="seletor-inline" for="modo-reproducao">
-            <span>Modo</span>
-            <select id="modo-reproducao" data-campo="modo-reproducao">
-              <option value="rapido" selected>Rápido</option>
-              <option value="guiado">Guiado</option>
-              <option value="animado">Animado</option>
-            </select>
-          </label>
+          <div class="seletor-inline">
+            <span id="rotulo-modo">Modo</span>
+            <div
+              id="modo-reproducao"
+              class="modo-segmentado"
+              role="radiogroup"
+              aria-labelledby="rotulo-modo"
+              data-campo="modo-reproducao"
+              data-valor="rapido"
+            >
+              <button type="button" role="radio" class="modo-opcao" data-modo="rapido" aria-checked="true">Rápido</button>
+              <button type="button" role="radio" class="modo-opcao" data-modo="guiado" aria-checked="false" tabindex="-1">Guiado</button>
+              <button type="button" role="radio" class="modo-opcao" data-modo="animado" aria-checked="false" tabindex="-1">Animado</button>
+            </div>
+          </div>
           <button
             type="button"
             class="btn"
@@ -118,7 +163,8 @@
             data-acao="tema"
             aria-label="Alternar tema escuro e claro"
           >
-            Tema
+            <svg class="icone-ui" viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="3.5"/><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M15.3 4.7l-1.4 1.4M6.1 13.9l-1.4 1.4"/></svg>
+            <span>Tema</span>
           </button>
           <button
             type="button"
@@ -127,7 +173,8 @@
             aria-haspopup="dialog"
             aria-label="Ajuda contextual"
           >
-            Ajuda
+            <svg class="icone-ui" viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="7"/><path d="M7.8 8a2.2 2.2 0 1 1 3.2 2c-.7.4-1 .8-1 1.5M10 14h.01"/></svg>
+            <span>Ajuda</span>
           </button>
         </div>
       </header>
@@ -142,7 +189,7 @@
     </div>
   </div>
 
-  <dialog id="dialogo-ajuda" class="dialogo-ajuda" aria-labelledby="titulo-ajuda">
+  <dialog id="dialogo-ajuda" class="dialogo-ajuda" data-superficie="vidro" data-vidro="espesso" aria-labelledby="titulo-ajuda">
     <h2 id="titulo-ajuda">Ajuda — {{ titulo }}</h2>
     <p>{{ ajuda_texto }}</p>
     <p>Atalhos: <span class="mono">Ctrl+Enter</span> executa; nas abas use <span class="mono">←</span>/<span class="mono">→</span>, <span class="mono">Home</span> e <span class="mono">End</span>.</p>

@@ -1,0 +1,195 @@
+/* Transições entre documentos (View Transitions) e composição do Laboratório (OS-M10-05). */
+
+@view-transition {
+  navigation: auto;
+}
+
+[data-viz="at1"] [data-fita="pre-mrna"],
+[data-viz="at2"] [data-fita="pre-mrna"],
+[data-viz="at3"] [data-fita="mrna"] {
+  view-transition-name: fita-produto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root),
+::view-transition-group(fita-produto) {
+  animation-duration: var(--dur-media, 300ms);
+  animation-timing-function: var(--curva-padrao, ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @view-transition {
+    navigation: none;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root),
+  ::view-transition-group(fita-produto) {
+    animation-duration: 0.001ms !important;
+  }
+}
+
+/* Indicador de origem e botão de envio entre atividades */
+.barra-fluxo-at {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-3, 12px);
+  margin-bottom: var(--esp-3, 12px);
+}
+
+.chip-origem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--raio-pilula, 999px);
+  border: 1px solid var(--separador, rgba(255, 255, 255, 0.14));
+  background: var(--superficie-elevada, #212428);
+  color: var(--texto, #f5f5f7);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Laboratório: estações planas sem cartões aninhados */
+.mapa-grade {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-5, 20px);
+}
+
+.mapa-trilha {
+  padding: var(--esp-4, 16px) 0;
+  border-bottom: 1px solid var(--separador, rgba(255, 255, 255, 0.12));
+  background: transparent;
+  box-shadow: none;
+}
+
+.mapa-trilha .mapa-fases {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--esp-4, 16px);
+  padding-left: 0;
+  padding-top: var(--esp-3, 12px);
+  border-left: none;
+  position: relative;
+}
+
+.mapa-trilha .mapa-fases::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 12px;
+  right: 12px;
+  height: 2px;
+  background: var(--separador, rgba(255, 255, 255, 0.16));
+}
+
+.mapa-trilha .mapa-fase {
+  position: relative;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: var(--esp-2, 8px) 0 0;
+}
+
+.mapa-trilha .mapa-fase::before {
+  content: "";
+  display: block;
+  position: absolute;
+  top: -12px;
+  left: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--acento, #5e6ad2);
+  border: 2px solid var(--superficie, #181a1f);
+}
+
+.mapa-trilha .mapa-fase[data-status="erro"]::before {
+  background: var(--erro, #ef4444);
+}
+
+.mapa-trilha .mapa-fase[data-status="nao-executado"]::before {
+  background: var(--texto-suave, #8b92a1);
+}
+
+.mapa-detalhe-cartao {
+  margin-top: var(--esp-3, 12px);
+}
+
+.mapa-detalhe-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-3, 12px);
+  margin-bottom: var(--esp-3, 12px);
+}
+
+/* Conexão explícita da AT4 com os DNAs originais */
+.mapa-at4-origens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-3, 12px);
+  margin-bottom: var(--esp-3, 12px);
+}
+
+.mapa-origem-dna-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-2, 8px);
+  padding: 6px 10px;
+  border-radius: var(--raio-medio, 10px);
+  background: var(--superficie-elevada, #212428);
+  border: 1px solid var(--separador, rgba(255, 255, 255, 0.12));
+  font-size: 12px;
+}
+
+.mapa-conexao-dna {
+  display: inline-block;
+  width: 22px;
+  height: 3px;
+  border-radius: var(--raio-pilula, 999px);
+  background: var(--cor-dna, #5e6ad2);
+  flex-shrink: 0;
+}
+
+.mapa-conexao-dna[data-conexao-dna="seq2"] {
+  background: var(--cor-mrna, #20c997);
+}
+
+.mapa-alinhamento-card {
+  background: transparent;
+  border: none;
+  border-left: 3px solid var(--cor-alinhamento, #e09f24);
+  border-radius: 0;
+  padding: var(--esp-2, 8px) 0 var(--esp-2, 8px) var(--esp-3, 12px);
+}
+
+@media (max-width: 900px) {
+  .mapa-trilha .mapa-fases {
+    grid-template-columns: minmax(0, 1fr);
+    padding-top: 0;
+    padding-left: var(--esp-4, 16px);
+  }
+
+  .mapa-trilha .mapa-fases::before {
+    top: 8px;
+    bottom: 8px;
+    left: 4px;
+    right: auto;
+    width: 2px;
+    height: auto;
+  }
+
+  .mapa-trilha .mapa-fase {
+    padding: 0 0 var(--esp-3, 12px);
+  }
+
+  .mapa-trilha .mapa-fase::before {
+    top: 6px;
+    left: calc(-1 * var(--esp-4, 16px));
+  }
+}

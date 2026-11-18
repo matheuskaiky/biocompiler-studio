@@ -10,12 +10,12 @@
 {% endblock %}
 {% block painel_visualizacao %}
   <div data-regiao="visualizacao" class="vazio">Execute a AT3 para destacar os códons percorridos na tradução.</div>
-  <div class="cartao">
+  <section class="secao-plana">
     <h2>Código genético (64 códons — API)</h2>
     <div class="campo-grupo">
       <label for="filtro-codon">Filtrar por códon ou aminoácido</label>
       <input id="filtro-codon" type="text" data-campo="filtro-codon" placeholder="Ex.: AUG, Met, STOP">
     </div>
     <div class="grade-codons" data-regiao="tabela-codons"></div>
-  </div>
+  </section>
 {% endblock %}
