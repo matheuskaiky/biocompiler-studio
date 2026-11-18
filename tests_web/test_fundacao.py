@@ -189,6 +189,14 @@ class TestNavegacaoEIcones(BaseViz):
         for nome in ("Laboratório Completo", "BioCompiler 1.0", "BioCompiler 2.0", "Ribossomo",
                      "Alinhamento", "Casos de Teste", "Histórico", "Sobre"):
             self.assertIn(nome, nav)
+        link = self.js("(() => { const a = Array.from(document.querySelectorAll("
+                       "\"nav[aria-label='Navegação principal'] a\")).find(x => /Comparador molecular/"
+                       ".test(x.textContent)); return a ? a.getAttribute('href') : null; })()")
+        self.assertIsNotNone(link, "item 'Comparador molecular' na navegação")
+        self.assertTrue(self.nav.abrir(f"http://127.0.0.1:{self.porta}{link}", 1440, 900))
+        self.pausa(400)
+        self.assertEqual(self.js("(document.querySelector('[role=tab][aria-selected=true]') || {})"
+                                 ".textContent.trim()"), "Comparador molecular")
 
     def test_sem_emoji_em_nenhuma_pagina(self):
         for caminho in ROTAS:

@@ -11,7 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from test_visualizacao import BaseViz, DNA_LONGO, DNA_OK, MRNA_OK  # noqa: E402
+from test_visualizacao import BaseViz, DNA_LONGO, DNA_OK, MRNA_OK, PRE_2INT  # noqa: E402
 
 from biocompiler import servicos  # noqa: E402
 
@@ -21,6 +21,9 @@ LINHA = "[data-componente=player] [data-componente=linha-tempo]"
 class TestPlayerVidro(BaseViz):
     def test_player_em_vidro_com_icones_svg(self):
         self.executar("/at1", {"seq": DNA_OK, "modo": "guiado"})
+        carregado = self.js("Array.from(document.styleSheets).some(f => (f.href || '')"
+                            ".endsWith('/static/css/motor.css') && f.cssRules.length > 0)")
+        self.assertTrue(carregado, "motor.css deve ser incluído pela página e servido")
         p = self.js("(() => { const p = document.querySelector('[data-componente=player]');"
                     " return [p.getAttribute('data-superficie'), getComputedStyle(p).backdropFilter]; })()")
         self.assertEqual(p[0], "vidro")
@@ -56,7 +59,10 @@ class TestLinhaDoTempo(BaseViz):
         self.clicar("proximo")
         self.assertEqual(self.estado_linha()[3], 2)
         self.js(f"document.querySelector({LINHA!r}).focus(), true")
-        for tecla, esperado in (("ArrowRight", 3), ("End", n), ("Home", 1)):
+        nome = self.js(f"document.querySelector({LINHA!r}).getAttribute('aria-label') || ''")
+        self.assertTrue(nome.strip(), "linha do tempo com nome acessível")
+        for tecla, esperado in (("ArrowRight", 3), ("End", n), ("Home", 1), ("PageDown", min(11, n)),
+                                ("PageUp", 1)):
             self.tecla(tecla)
             self.assertEqual(self.estado()["k"], esperado, tecla)
             self.assertEqual(self.estado_linha()[3], esperado)
@@ -89,8 +95,8 @@ class TestLinhaDoTempo(BaseViz):
         self.assertGreaterEqual(self.estado()["k"], n - 1)
 
     def test_marcos_por_tipo_de_evento(self):
-        for caminho, at, seq in (("/at1", "at1", DNA_OK), ("/at3", "at3", MRNA_OK),
-                                 ("/at1", "at1", DNA_LONGO)):
+        for caminho, at, seq in (("/at1", "at1", DNA_OK), ("/at2", "at2", PRE_2INT),
+                                 ("/at3", "at3", MRNA_OK), ("/at1", "at1", DNA_LONGO)):
             r = servicos.processar_lote(at, [seq])[0]
             primeiros = {}
             for k, e in enumerate(r.eventos, start=1):
@@ -146,13 +152,38 @@ class TestSelecaoSincronizada(BaseViz):
                       "[data-selecionado]')).map(c => +c.getAttribute('data-ordem')),"
                       " document.querySelectorAll('[data-viz=at3] [data-conexao]').length]")
         self.assertEqual(sel, [[2], [2], 1], "códon 2, aminoácido 2 e uma conexão SVG")
-        # códon → aminoácido
+        # códon → aminoácido, pelo teclado (Enter)
         self.js("document.querySelector('[data-viz=at3] [data-codon-mrna][data-ordem=\"0\"]')"
-                ".dispatchEvent(new MouseEvent('click', {bubbles: true})), true")
-        self.pausa(250)
+                ".focus(), true")
+        self.tecla("Enter")
         self.assertEqual(self.js("Array.from(document.querySelectorAll('[data-viz=at3] "
                                  "[data-aminoacido][data-selecionado]')).map(c => +c.getAttribute('data-ordem'))"),
                          [0])
+
+
+    def test_conexao_sem_animacao_com_movimento_reduzido(self):
+        self.executar("/at3", {"seq": MRNA_OK, "modo": "rapido"}, reduzir_movimento=True)
+        self.js("document.querySelector('[data-viz=at3] [data-aminoacido][data-ordem=\"1\"]')"
+                ".focus(), true")
+        self.tecla(" ")
+        self.pausa(100)
+        self.assertEqual(self.js("document.querySelectorAll('[data-viz=at3] [data-conexao]').length"), 1)
+        rodando = self.js("document.getAnimations().filter(a => a.playState === 'running'"
+                          " && (a.effect && a.effect.getTiming().duration > 10)).length")
+        self.assertEqual(rodando, 0, "com movimento reduzido a conexão aparece sem animação")
+
+
+class TestMarcosAT4(BaseViz):
+    def test_marcos_na_at4(self):
+        r = servicos.alinhar_par("ACGTAC", "ACGTTC", "global", 2, -1, -2)[0]
+        primeiros = {}
+        for k, e in enumerate(r.eventos, start=1):
+            primeiros.setdefault(e.tipo, k)
+        self.executar("/at4", {"seq1": "ACGTAC", "seq2": "ACGTTC", "metodo": "global",
+                               "modo": "rapido"})
+        marcos = self.js(f"Array.from(document.querySelectorAll('{LINHA} [data-marco]'))"
+                         ".map(m => [m.getAttribute('data-tipo'), +m.getAttribute('data-passo')])")
+        self.assertEqual(sorted(marcos), sorted([t, k] for t, k in primeiros.items()))
 
 
 if __name__ == "__main__":
