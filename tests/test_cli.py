@@ -534,6 +534,8 @@ class TestCliLote(Temp):
              "opções incompatíveis: --output e --no-save"),
             (("at1", "-i", "entrada.txt", "-o", "r.txt", "--out-dir", "d"),
              "opções incompatíveis: --output e --out-dir"),
+            (("at3", "-i", "entrada.txt", "--out-dir", "d", "--no-save"),
+             "opções incompatíveis: --out-dir e --no-save"),
         ]
         for args, mensagem in casos:
             with self.subTest(args=args):
@@ -613,6 +615,17 @@ class TestCliAT4(Temp):
         self.assertEqual(cli(*args, "--force", cwd=self.dir)[0], 0)
         self.assertNotEqual(ler(self.dir / "r" / "matriz_pontuacao_local.csv"), "antigo\n")
 
+    def test_colisao_parcial_nao_grava_nada(self):
+        (self.dir / "r").mkdir()
+        escrever(self.dir / "r", "matriz_traceback_global.csv", "antigo\n")
+        rc, out, err = cli("at4", "--seq1", "ACGT", "--seq2", "ACGT", "--out-dir", "r",
+                           cwd=self.dir)
+        self.assertEqual((rc, out), (1, ""))
+        self.assertIn("arquivo já existe:", err)
+        self.assertEqual([p.name for p in (self.dir / "r").iterdir()],
+                         ["matriz_traceback_global.csv"])
+        self.assertEqual(ler(self.dir / "r" / "matriz_traceback_global.csv"), "antigo\n")
+
     def test_entrada_fasta_e_txt(self):
         escrever(self.dir, "par.fasta", ">Seq1\nacg\ntac\n>Seq2\nACGTTC\n")
         escrever(self.dir, "par.txt", "acgtac\r\nACGTTC\r\n")
@@ -663,6 +676,8 @@ class TestCliAT4(Temp):
             (("--seq1", "ACGT"), "--seq1 e --seq2 devem ser informados juntos"),
             (("-i", "tres.txt", "--seq1", "A", "--seq2", "C"),
              "use apenas um entre --input e --seq1/--seq2"),
+            (("--seq1", "A", "--seq2", "C", "--out-dir", "d", "--no-save"),
+             "opções incompatíveis: --out-dir e --no-save"),
         ]
         for args, mensagem in casos:
             with self.subTest(args=args):
@@ -670,6 +685,7 @@ class TestCliAT4(Temp):
                 self.assertEqual((rc, out), (1, ""))
                 self.assertIn(f"biocompiler: {mensagem}", err)
         self.assertFalse((self.dir / "saidas").exists())
+        self.assertFalse((self.dir / "d").exists())
 
     def test_argparse_at4(self):
         for args in (("--method", "xyz"), ("-o", "r.txt"), ("--delimiter", "tab"),
@@ -737,6 +753,26 @@ class TestAjudaExemplos(Temp):
         self.assertEqual(rc, 1)
         self.assertIn("arquivo já existe:", err)
         self.assertEqual(cli("examples", "--write", "ex", "--force", cwd=self.dir)[0], 0)
+
+    def test_examples_colisao_parcial_nao_grava_nada(self):
+        (self.dir / "ex").mkdir()
+        escrever(self.dir / "ex", "at3_exemplos.txt", "antigo\n")
+        rc, out, err = cli("examples", "--write", "ex", cwd=self.dir)
+        self.assertEqual(rc, 1)
+        self.assertIn("arquivo já existe:", err)
+        self.assertEqual([p.name for p in (self.dir / "ex").iterdir()], ["at3_exemplos.txt"])
+        self.assertEqual(ler(self.dir / "ex" / "at3_exemplos.txt"), "antigo\n")
+
+    def test_comando_test_executa_suite_do_pacote(self):
+        # Não recursivo: só test_main_raiz.py (9 testes), a partir de outro diretório.
+        rc, out, err = cli("test", "--pattern", "test_main_raiz.py", cwd=self.dir)
+        self.assertEqual(rc, 0, err)
+        self.assertIn("Ran 9 tests", err)
+        self.assertIn("OK", err)
+        self.assertEqual(list(self.dir.iterdir()), [])
+        rc, _, err = cli("test", "--pattern", "nenhum_*.py", cwd=self.dir)
+        self.assertEqual(rc, 1)
+        self.assertIn("Ran 0 tests", err)
 
 
 # ============================================================ isolamento
