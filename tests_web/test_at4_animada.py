@@ -437,6 +437,36 @@ class TestMovimentoELimites(BaseAT4):
                                  "[data-regiao=aviso-matriz]').length"), 0)
 
 
+class TestAcabamentoVisual(BaseAT4):
+    """R1 (CTO): grade com células em caixas, mapa de calor e rótulo de estado coerente."""
+
+    def test_celulas_em_caixas_com_mapa_de_calor(self):
+        self.abrir_at4("rapido", metodo="global")
+        est = self.js("""(() => Array.from(document.querySelectorAll('[data-viz=at4] [data-celula]'))
+          .filter(e => !e.hasAttribute('data-caminho')).map(e => {
+            const c = getComputedStyle(e), r = e.getBoundingClientRect();
+            return {raio: parseFloat(c.borderTopLeftRadius) || 0, fundo: c.backgroundColor,
+                    w: r.width, h: r.height};
+          }))()""")
+        self.assertTrue(est)
+        self.assertTrue(all(x["raio"] >= 3 for x in est), "células com cantos arredondados")
+        self.assertTrue(all(x["w"] >= 34 and x["h"] >= 30 for x in est),
+                        "células com área legível (≥ 34×30 px)")
+        self.assertGreaterEqual(len({x["fundo"] for x in est}), 4,
+                                "mapa de calor: fundos variam conforme o valor")
+
+    def test_rotulo_do_preenchimento_acompanha_o_passo(self):
+        self.abrir_at4("guiado", metodo="global")
+        rot = "[data-regiao=celula-atual]"
+        self.assertIn("Bordas", self.texto(rot))
+        self.clicar("proximo")
+        self.sub("preencher-tudo")
+        self.clicar("proximo")  # INICIO_TRACEBACK
+        t = self.texto(rot)
+        self.assertNotIn("Bordas", t)
+        self.assertIn("Matriz completa", t)
+
+
 class TestSemRecorrenciaNoJS(unittest.TestCase):
     def test_js_nao_aplica_a_recorrencia(self):
         raiz = Path(__file__).resolve().parents[1] / "biocompiler" / "web" / "static" / "js"
