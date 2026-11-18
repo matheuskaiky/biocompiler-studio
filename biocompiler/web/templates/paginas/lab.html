@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block scripts %}
+<script type="module" src="/static/js/paginas/lab.js"></script>
+{% endblock %}
+{% block content %}
+<div class="cartao">
+  <div class="abas-lista" role="tablist" aria-label="Seções do Laboratório Completo">
+    <button type="button" class="aba-btn" role="tab" id="tab-montar" aria-controls="painel-montar" aria-selected="true">Montar experimento</button>
+    <button type="button" class="aba-btn" role="tab" id="tab-mapa" aria-controls="painel-mapa" aria-selected="false" tabindex="-1">Mapa da expressão gênica</button>
+    <button type="button" class="aba-btn" role="tab" id="tab-comparador" aria-controls="painel-comparador" aria-selected="false" tabindex="-1">Comparador molecular</button>
+    <button type="button" class="aba-btn" role="tab" id="tab-relatorio" aria-controls="painel-relatorio" aria-selected="false" tabindex="-1">Relatório final</button>
+  </div>
+
+  <section id="painel-montar" role="tabpanel" aria-labelledby="tab-montar">
+    {% set texto_cta = "Executar laboratório completo" %}
+    {% include "parciais/editor_par.html" %}
+  </section>
+
+  <section id="painel-mapa" role="tabpanel" aria-labelledby="tab-mapa" class="painel-oculto">
+    <div data-regiao="resultados" class="vazio">Execute o laboratório completo para visualizar o mapa de expressão das duas amostras.</div>
+  </section>
+
+  <section id="painel-comparador" role="tabpanel" aria-labelledby="tab-comparador" class="painel-oculto">
+    <div data-regiao="comparador" class="vazio">Execute o laboratório completo para comparar os produtos das duas amostras.</div>
+  </section>
+
+  <section id="painel-relatorio" role="tabpanel" aria-labelledby="tab-relatorio" class="painel-oculto">
+    <div class="barra-ferramentas">
+      <label class="seletor-inline" for="delimitador-lab">
+        <span>Delimitador CSV</span>
+        <select id="delimitador-lab" data-campo="delimitador">
+          <option value="semicolon" selected>; (ponto e vírgula)</option>
+          <option value="comma">, (vírgula)</option>
+        </select>
+      </label>
+      <button type="button" class="btn btn-primario" data-acao="exportar">
+        Exportar .zip
+      </button>
+    </div>
+    <div data-regiao="relatorio-final" class="vazio">Nenhum relatório gerado ainda.</div>
+  </section>
+</div>
+{% endblock %}

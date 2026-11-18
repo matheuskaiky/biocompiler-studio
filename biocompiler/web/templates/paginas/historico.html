@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block scripts %}
+<script type="module" src="/static/js/paginas/historico.js"></script>
+{% endblock %}
+{% block content %}
+<div class="cartao cartao-destaque">
+  <div class="barra-ferramentas">
+    <button type="button" class="btn btn-primario" data-acao="exportar-historico">
+      Exportar histórico .json
+    </button>
+    <button type="button" class="btn" data-acao="limpar-historico">
+      Limpar histórico
+    </button>
+  </div>
+  <p>O histórico fica armazenado apenas na sessão atual do navegador (<span class="mono">sessionStorage</span>). Nada é enviado para fora do computador.</p>
+</div>
+<div data-regiao="historico" class="lista-cartoes">
+  <div class="vazio">Nenhum experimento nesta sessão.</div>
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends "parciais/abas_at.html" %}
+{% block scripts %}
+<script type="module" src="/static/js/paginas/at4.js"></script>
+{% endblock %}
+{% block painel_entrada %}
+  {% set texto_cta = "Executar AT4" %}
+  {% include "parciais/editor_par.html" %}
+{% endblock %}
+{% block painel_visualizacao %}
+  <div data-regiao="visualizacao" class="vazio">Execute a AT4 para inspecionar as matrizes e células.</div>
+{% endblock %}

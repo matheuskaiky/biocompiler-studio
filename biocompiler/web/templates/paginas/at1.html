@@ -1,0 +1,10 @@
+{% extends "parciais/abas_at.html" %}
+{% block scripts %}
+<script type="module" src="/static/js/paginas/lote.js"></script>
+{% endblock %}
+{% block painel_entrada %}
+  {% set label_lote = "Sequências de DNA (uma por linha, alfabeto estrito A, T, C, G)" %}
+  {% set placeholder_lote = "Ex.: ATGGCTAAACCGTAA" %}
+  {% set texto_cta = "Executar AT1" %}
+  {% include "parciais/editor_lote.html" %}
+{% endblock %}

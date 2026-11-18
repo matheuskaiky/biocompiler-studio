@@ -1,25 +1,144 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-tema="escuro">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}BioCompiler Studio{% endblock %}</title>
-  <link rel="stylesheet" href="/static/css/app.css">
-  <script src="/static/js/app.js" defer></script>
+  <title>{% block title %}{{ titulo }} — BioCompiler Studio{% endblock %}</title>
+  <link rel="icon" href="/static/img/logo-helice.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/css/tokens.css">
+  <link rel="stylesheet" href="/static/css/layout.css">
+  <link rel="stylesheet" href="/static/css/componentes.css">
+  <script src="/static/js/tema.js"></script>
+  <script type="module" src="/static/js/app.js"></script>
+  {% block scripts %}{% endblock %}
 </head>
-<body>
-  <header>
-    <nav aria-label="Navegação principal">
-      <a href="/">Laboratório Completo</a>
-      <a href="/at1">AT1 · Transcrição</a>
-      <a href="/at2">AT2 · Maturação</a>
-      <a href="/at3">AT3 · Tradução</a>
-      <a href="/at4">AT4 · Alinhamento</a>
-      <a href="/casos">Casos de Teste</a>
-      <a href="/historico">Histórico local</a>
-      <a href="/sobre">Sobre/Metodologia</a>
-    </nav>
-  </header>
-  {% block content %}{% endblock %}
+<body data-pagina="{{ pagina }}">
+  <a href="#conteudo" class="pular-conteudo">Pular para o conteúdo</a>
+
+  <div class="casca">
+    <aside id="barra-lateral" class="barra-lateral">
+      <a href="/" class="marca">
+        <img src="/static/img/logo-helice.svg" alt="" width="36" height="36">
+        <span>
+          <span class="marca-nome">BioCompiler Studio</span>
+          <span class="marca-sub">AT1–AT4 · Laboratório</span>
+        </span>
+      </a>
+
+      <nav aria-label="Navegação principal">
+        <div class="nav-grupo">
+          <div class="nav-titulo">Laboratório</div>
+          <a href="/" class="nav-link" {% if atual == "/" %}aria-current="page"{% endif %}>
+            <span class="ponto ponto-dna" aria-hidden="true"></span>
+            Laboratório Completo
+          </a>
+        </div>
+
+        <div class="nav-grupo">
+          <div class="nav-titulo">Atividades</div>
+          <a href="/at1" class="nav-link" {% if atual == "/at1" %}aria-current="page"{% endif %}>
+            <span class="ponto ponto-pre" aria-hidden="true"></span>
+            AT1 · Transcrição
+          </a>
+          <a href="/at2" class="nav-link" {% if atual == "/at2" %}aria-current="page"{% endif %}>
+            <span class="ponto ponto-spl" aria-hidden="true"></span>
+            AT2 · Maturação
+          </a>
+          <a href="/at3" class="nav-link" {% if atual == "/at3" %}aria-current="page"{% endif %}>
+            <span class="ponto ponto-trad" aria-hidden="true"></span>
+            AT3 · Tradução
+          </a>
+          <a href="/at4" class="nav-link" {% if atual == "/at4" %}aria-current="page"{% endif %}>
+            <span class="ponto ponto-alin" aria-hidden="true"></span>
+            AT4 · Alinhamento
+          </a>
+        </div>
+
+        <div class="nav-grupo">
+          <div class="nav-titulo">Recursos</div>
+          <a href="/casos" class="nav-link" {% if atual == "/casos" %}aria-current="page"{% endif %}>
+            <span class="ponto ponto-mrna" aria-hidden="true"></span>
+            Casos de Teste
+          </a>
+          <a href="/historico" class="nav-link" {% if atual == "/historico" %}aria-current="page"{% endif %}>
+            <span class="ponto ponto-dna" aria-hidden="true"></span>
+            Histórico local
+          </a>
+          <a href="/sobre" class="nav-link" {% if atual == "/sobre" %}aria-current="page"{% endif %}>
+            <span class="ponto ponto-mrna" aria-hidden="true"></span>
+            Sobre/Metodologia
+          </a>
+        </div>
+      </nav>
+
+      <div class="rodape-lateral">
+        Processamento local e offline. Sem telemetria.
+      </div>
+    </aside>
+
+    <div class="area-principal">
+      <header class="barra-topo">
+        <div class="topo-esquerda">
+          <button
+            type="button"
+            class="btn btn-menu"
+            data-acao="menu"
+            aria-expanded="false"
+            aria-controls="barra-lateral"
+          >
+            Menu
+          </button>
+          <div>
+            <h1>{{ titulo }}</h1>
+            <p class="topo-sub">{{ descricao }}</p>
+          </div>
+        </div>
+
+        <div class="topo-acoes">
+          <label class="seletor-inline" for="modo-reproducao">
+            <span>Modo</span>
+            <select id="modo-reproducao" data-campo="modo-reproducao">
+              <option value="rapido" selected>Rápido</option>
+              <option value="guiado">Guiado</option>
+              <option value="animado">Animado</option>
+            </select>
+          </label>
+          <button
+            type="button"
+            class="btn"
+            data-acao="tema"
+            aria-label="Alternar tema escuro e claro"
+          >
+            Tema
+          </button>
+          <button
+            type="button"
+            class="btn"
+            data-acao="ajuda"
+            aria-haspopup="dialog"
+            aria-label="Ajuda contextual"
+          >
+            Ajuda
+          </button>
+        </div>
+      </header>
+
+      <main id="conteudo" class="conteudo">
+        <div class="barra-status" aria-live="polite" data-regiao="status">
+          Pronto para executar.
+        </div>
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+  <dialog id="dialogo-ajuda" class="dialogo-ajuda" aria-labelledby="titulo-ajuda">
+    <h2 id="titulo-ajuda">Ajuda — {{ titulo }}</h2>
+    <p>{{ ajuda_texto }}</p>
+    <p>Atalhos: <span class="mono">Ctrl+Enter</span> executa; nas abas use <span class="mono">←</span>/<span class="mono">→</span>, <span class="mono">Home</span> e <span class="mono">End</span>.</p>
+    <div class="barra-ferramentas">
+      <button type="button" class="btn btn-primario" data-acao="fechar-ajuda">Fechar</button>
+    </div>
+  </dialog>
 </body>
 </html>

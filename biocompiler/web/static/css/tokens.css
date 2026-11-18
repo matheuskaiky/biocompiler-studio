@@ -1,0 +1,73 @@
+:root {
+  --fundo: #0b0f17;
+  --fundo-elevado: #101622;
+  --superficie: #141c2b;
+  --superficie-alt: #1a2436;
+  --borda: #263249;
+  --borda-forte: #364766;
+  --texto: #e6edf7;
+  --texto-suave: #9fb0c8;
+  --texto-apagado: #74859e;
+
+  --cor-dna: #6366f1;
+  --cor-pre-mrna: #22d3ee;
+  --cor-splicing: #a78bfa;
+  --cor-mrna: #2dd4bf;
+  --cor-traducao: #34d399;
+  --cor-alinhamento: #f59e0b;
+  --cor-erro: #f87171;
+  --cor-ok: #34d399;
+
+  --cor-destaque: var(--cor-dna);
+  --base-a: #34d399;
+  --base-c: #38bdf8;
+  --base-g: #fbbf24;
+  --base-t: #fb7185;
+  --base-u: #c084fc;
+  --base-outro: #f87171;
+
+  --sombra-cartao: 0 10px 30px rgba(3, 7, 18, 0.45), 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  --raio-cartao: 14px;
+  --raio-controle: 10px;
+  --fonte-ui: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --fonte-mono: ui-monospace, "Cascadia Code", "Fira Code", Consolas, monospace;
+}
+
+[data-tema="claro"] {
+  --fundo: #f3f6fb;
+  --fundo-elevado: #ffffff;
+  --superficie: #ffffff;
+  --superficie-alt: #edf2f8;
+  --borda: #d6e0ec;
+  --borda-forte: #b5c5d8;
+  --texto: #111827;
+  --texto-suave: #475569;
+  --texto-apagado: #64748b;
+
+  --cor-dna: #4338ca;
+  --cor-pre-mrna: #0891b2;
+  --cor-splicing: #7c3aed;
+  --cor-mrna: #0d9488;
+  --cor-traducao: #047857;
+  --cor-alinhamento: #b45309;
+  --cor-erro: #dc2626;
+  --cor-ok: #047857;
+
+  --base-a: #047857;
+  --base-c: #0369a1;
+  --base-g: #b45309;
+  --base-t: #be123c;
+  --base-u: #7e22ce;
+  --base-outro: #dc2626;
+
+  --sombra-cartao: 0 8px 24px rgba(15, 23, 42, 0.07), 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+[data-pagina="lab"] { --cor-destaque: var(--cor-dna); }
+[data-pagina="at1"] { --cor-destaque: var(--cor-pre-mrna); }
+[data-pagina="at2"] { --cor-destaque: var(--cor-splicing); }
+[data-pagina="at3"] { --cor-destaque: var(--cor-traducao); }
+[data-pagina="at4"] { --cor-destaque: var(--cor-alinhamento); }
+[data-pagina="casos"] { --cor-destaque: var(--cor-mrna); }
+[data-pagina="historico"] { --cor-destaque: var(--cor-dna); }
+[data-pagina="sobre"] { --cor-destaque: var(--cor-mrna); }

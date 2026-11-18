@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="cartao">
+  <div class="abas-lista" role="tablist" aria-label="Seções da atividade">
+    <button type="button" class="aba-btn" role="tab" id="tab-entrada" aria-controls="painel-entrada" aria-selected="true">Entrada</button>
+    <button type="button" class="aba-btn" role="tab" id="tab-etapas" aria-controls="painel-etapas" aria-selected="false" tabindex="-1">Etapas</button>
+    <button type="button" class="aba-btn" role="tab" id="tab-visualizacao" aria-controls="painel-visualizacao" aria-selected="false" tabindex="-1">Visualização</button>
+    <button type="button" class="aba-btn" role="tab" id="tab-resultados" aria-controls="painel-resultados" aria-selected="false" tabindex="-1">Resultados</button>
+    <button type="button" class="aba-btn" role="tab" id="tab-exportacao" aria-controls="painel-exportacao" aria-selected="false" tabindex="-1">Exportação</button>
+  </div>
+
+  <section id="painel-entrada" role="tabpanel" aria-labelledby="tab-entrada">
+    {% block painel_entrada %}{% endblock %}
+  </section>
+
+  <section id="painel-etapas" role="tabpanel" aria-labelledby="tab-etapas" class="painel-oculto">
+    <div data-regiao="etapas" class="vazio">Execute a atividade para visualizar a linha do tempo de eventos.</div>
+  </section>
+
+  <section id="painel-visualizacao" role="tabpanel" aria-labelledby="tab-visualizacao" class="painel-oculto">
+    {% block painel_visualizacao %}
+    <div data-regiao="visualizacao" class="vazio">Execute a atividade para inspecionar a visualização.</div>
+    {% endblock %}
+  </section>
+
+  <section id="painel-resultados" role="tabpanel" aria-labelledby="tab-resultados" class="painel-oculto">
+    <div data-regiao="resultados" class="vazio">Nenhum resultado ainda. Cole uma sequência ou carregue um exemplo.</div>
+  </section>
+
+  <section id="painel-exportacao" role="tabpanel" aria-labelledby="tab-exportacao" class="painel-oculto">
+    <div class="cartao">
+      <h2>Exportar artefatos (.zip)</h2>
+      <p>Gera o mesmo conjunto de arquivos da CLI com codificação UTF-8.</p>
+      <div class="barra-ferramentas">
+        <label class="seletor-inline" for="delimitador-zip">
+          <span>Delimitador CSV</span>
+          <select id="delimitador-zip" data-campo="delimitador">
+            <option value="semicolon" selected>; (ponto e vírgula)</option>
+            <option value="comma">, (vírgula)</option>
+          </select>
+        </label>
+        <button type="button" class="btn btn-primario" data-acao="exportar">
+          Exportar .zip
+        </button>
+      </div>
+      <div data-regiao="lista-artefatos"></div>
+    </div>
+  </section>
+</div>
+{% endblock %}

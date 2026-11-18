@@ -1,0 +1,30 @@
+<div class="cartao cartao-destaque">
+  <div class="campo-grupo">
+    <label for="campo-sequencias">{{ label_lote }}</label>
+    <textarea
+      id="campo-sequencias"
+      class="editor-seq mono"
+      data-campo="sequencias"
+      placeholder="{{ placeholder_lote }}"
+    ></textarea>
+  </div>
+
+  <div class="chips-bases" data-regiao="contadores-lote"></div>
+
+  <div class="barra-ferramentas">
+    <button type="button" class="btn btn-primario" data-acao="executar">
+      {{ texto_cta }}
+    </button>
+    <button type="button" class="btn" data-acao="carregar-exemplos">
+      Carregar exemplos
+    </button>
+    <button type="button" class="btn" data-acao="limpar">
+      Limpar
+    </button>
+  </div>
+
+  <div class="zona-arquivo" data-zona="arquivo-lote">
+    <label for="arquivo-lote">Importar arquivo (.txt, uma sequência por linha) ou arraste aqui:</label>
+    <input id="arquivo-lote" type="file" accept=".txt,text/plain" data-campo="arquivo">
+  </div>
+</div>

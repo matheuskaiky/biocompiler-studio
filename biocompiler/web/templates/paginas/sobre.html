@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="cartao cartao-destaque">
+  <h2>As quatro atividades (AT1–AT4)</h2>
+  <ul>
+    <li><strong>AT1 — Transcrição:</strong> valida DNA estrito (<span class="mono">A, T, C, G</span>), localiza o primeiro <span class="mono">ATG</span>, verifica quadro/STOP/nonsense e transcreve <span class="mono">T → U</span> na sequência inteira.</li>
+    <li><strong>AT2 — Maturação:</strong> identifica candidatos <span class="mono">GU … A … AG</span> com branch point entre 10 e 30 nt do <span class="mono">AG</span>, remove íntrons não sobrepostos e adiciona <span class="mono">m7Gppp</span> e cauda de 100 <span class="mono">A</span>.</li>
+    <li><strong>AT3 — Tradução:</strong> confirma CAP <span class="mono">m7Gppp</span> e cauda poli-A exata de 100 <span class="mono">A</span>, localiza o primeiro <span class="mono">AUG</span> e traduz códons pela tabela genética de 64 códons até o primeiro STOP em fase.</li>
+    <li><strong>AT4 — Alinhamento:</strong> programação dinâmica própria com Smith–Waterman (local) e Needleman–Wunsch (global), desempate <span class="mono">↖ &gt; ↑ &gt; ←</span> e matrizes completas.</li>
+  </ul>
+</div>
+
+<div class="cartao">
+  <h2>Convenções didáticas e arquitetura</h2>
+  <p>As convenções de projeto (D007–D019) garantem determinismo entre biblioteca Python, CLI e interface web: os quatro módulos em <span class="mono">core/</span> são puros e independentes; <span class="mono">pipeline.py</span> é o único compositor do modo completo; e a camada web apenas consome os serviços e exportadores sem recalcular biologia.</p>
+</div>
+
+<div class="cartao">
+  <h2>Privacidade e execução offline</h2>
+  <p>O servidor escuta localmente em <span class="mono">127.0.0.1</span>, sem chamadas externas, CDNs ou telemetria. O histórico de execuções permanece restrito à sessão do navegador (<span class="mono">sessionStorage</span>).</p>
+</div>
+{% endblock %}

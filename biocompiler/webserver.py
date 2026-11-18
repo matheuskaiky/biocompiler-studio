@@ -32,14 +32,25 @@ _TEMPLATES_DIR = _WEB_DIR / "templates"
 _STATIC_DIR = _WEB_DIR / "static"
 
 _PAGINAS = {
-    "/": ("Laboratório Completo", "Fluxo integrado AT1 → AT2 → AT3 + AT4."),
-    "/at1": ("AT1 · Transcrição", "Transcrição de DNA em pré-mRNA."),
-    "/at2": ("AT2 · Maturação", "Splicing e maturação de pré-mRNA."),
-    "/at3": ("AT3 · Tradução", "Tradução de mRNA maduro em proteína."),
-    "/at4": ("AT4 · Alinhamento", "Alinhamento local (Smith–Waterman) e global (Needleman–Wunsch)."),
-    "/casos": ("Casos de Teste", "Exemplos didáticos das atividades."),
-    "/historico": ("Histórico local", "Histórico de execuções na sessão."),
-    "/sobre": ("Sobre/Metodologia", "Convenções didáticas e arquitetura do BioCompiler Studio."),
+    "/": ("lab", "Laboratório Completo", "Fluxo integrado AT1 → AT2 → AT3 + AT4."),
+    "/at1": ("at1", "AT1 · Transcrição", "Transcrição de DNA em pré-mRNA."),
+    "/at2": ("at2", "AT2 · Maturação", "Splicing e maturação de pré-mRNA."),
+    "/at3": ("at3", "AT3 · Tradução", "Tradução de mRNA maduro em proteína."),
+    "/at4": ("at4", "AT4 · Alinhamento", "Alinhamento local (Smith–Waterman) e global (Needleman–Wunsch)."),
+    "/casos": ("casos", "Casos de Teste", "Exemplos didáticos das atividades."),
+    "/historico": ("historico", "Histórico local", "Histórico de execuções na sessão."),
+    "/sobre": ("sobre", "Sobre/Metodologia", "Convenções didáticas e arquitetura do BioCompiler Studio."),
+}
+
+_AJUDA_PAGINAS = {
+    "lab": "Informe duas sequências de DNA (ou importe .txt/.fasta) para executar AT1→AT2→AT3 em ambas e alinhar os DNAs originais na AT4.",
+    "at1": "Cole uma ou mais sequências de DNA (A, T, C, G) por linha ou importe um arquivo .txt.",
+    "at2": "Cole sequências de pré-mRNA (A, U, C, G) para identificar íntrons GU…A…AG e maturar com m7Gppp e 100 A.",
+    "at3": "Cole mRNA maduro (m7Gppp + região + 100 A) para traduzir em aminoácidos pela tabela genética.",
+    "at4": "Informe duas sequências de DNA e os pesos (Match, Mismatch, Gap) para alinhamento Smith–Waterman e Needleman–Wunsch.",
+    "casos": "Selecione qualquer desafio dos enunciados para abrir a atividade correspondente preenchida e executada.",
+    "historico": "Consulte, reabra ou exporte os experimentos executados nesta sessão do navegador.",
+    "sobre": "Resumo das regras acadêmicas, decisões de projeto (D007–D019) e política de privacidade.",
 }
 
 _TIPOS_ESTATICOS = {
@@ -228,9 +239,23 @@ def criar_servidor(
             corpo = json.dumps(dados, ensure_ascii=False).encode("utf-8")
             self._enviar_resposta(status, "application/json; charset=utf-8", corpo)
 
-        def _enviar_html(self, status: int, titulo: str, descricao: str) -> None:
-            template = jinja_env.get_template("pagina.html")
-            html = template.render(titulo=titulo, descricao=descricao)
+        def _enviar_html(
+            self,
+            status: int,
+            titulo: str,
+            descricao: str,
+            template_nome: str = "pagina.html",
+            pagina: str = "sobre",
+            atual: str = "",
+        ) -> None:
+            template = jinja_env.get_template(template_nome)
+            html = template.render(
+                titulo=titulo,
+                descricao=descricao,
+                pagina=pagina,
+                atual=atual,
+                ajuda_texto=_AJUDA_PAGINAS.get(pagina, ""),
+            )
             self._enviar_resposta(status, "text/html; charset=utf-8", html.encode("utf-8"))
 
         def _ler_json_post(self) -> dict:
@@ -274,8 +299,15 @@ def criar_servidor(
         def do_GET(self) -> None:
             caminho = urllib.parse.urlsplit(self.path).path
             if caminho in _PAGINAS:
-                titulo, desc = _PAGINAS[caminho]
-                self._enviar_html(200, titulo, desc)
+                nome, titulo, desc = _PAGINAS[caminho]
+                self._enviar_html(
+                    200,
+                    titulo,
+                    desc,
+                    template_nome=f"paginas/{nome}.html",
+                    pagina=nome,
+                    atual=caminho,
+                )
                 return
 
             if caminho.startswith("/static/"):

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block scripts %}
+<script type="module" src="/static/js/paginas/casos.js"></script>
+{% endblock %}
+{% block content %}
+<div class="cartao cartao-destaque">
+  <h2>Desafios dos enunciados</h2>
+  <p>Clique em qualquer caso abaixo para abrir a atividade correspondente preenchida e executada via API.</p>
+</div>
+<div data-regiao="casos" class="lista-cartoes">
+  <div class="vazio">Carregando casos de teste…</div>
+</div>
+{% endblock %}

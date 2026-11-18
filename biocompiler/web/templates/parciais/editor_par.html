@@ -1,0 +1,65 @@
+<div class="cartao cartao-destaque">
+  <div class="grade-dupla">
+    <div class="campo-grupo">
+      <label for="campo-seq1">Seq1 (DNA)</label>
+      <textarea
+        id="campo-seq1"
+        class="editor-seq mono"
+        data-campo="seq1"
+        placeholder="Ex.: ACGTAC"
+      ></textarea>
+      <div class="chips-bases" data-regiao="contadores-seq1"></div>
+    </div>
+
+    <div class="campo-grupo">
+      <label for="campo-seq2">Seq2 (DNA)</label>
+      <textarea
+        id="campo-seq2"
+        class="editor-seq mono"
+        data-campo="seq2"
+        placeholder="Ex.: ACGTTC"
+      ></textarea>
+      <div class="chips-bases" data-regiao="contadores-seq2"></div>
+    </div>
+  </div>
+
+  <div class="grade-params">
+    <div class="campo-grupo">
+      <label for="campo-metodo">Método (AT4)</label>
+      <select id="campo-metodo" data-campo="metodo">
+        <option value="both" selected>Ambos (local + global)</option>
+        <option value="local">Local (Smith–Waterman)</option>
+        <option value="global">Global (Needleman–Wunsch)</option>
+      </select>
+    </div>
+    <div class="campo-grupo">
+      <label for="campo-match">Match</label>
+      <input id="campo-match" type="number" value="2" data-campo="match">
+    </div>
+    <div class="campo-grupo">
+      <label for="campo-mismatch">Mismatch</label>
+      <input id="campo-mismatch" type="number" value="-1" data-campo="mismatch">
+    </div>
+    <div class="campo-grupo">
+      <label for="campo-gap">Gap</label>
+      <input id="campo-gap" type="number" value="-2" data-campo="gap">
+    </div>
+  </div>
+
+  <div class="barra-ferramentas">
+    <button type="button" class="btn btn-primario" data-acao="executar">
+      {{ texto_cta }}
+    </button>
+    <button type="button" class="btn" data-acao="carregar-exemplo-par">
+      Colar exemplo
+    </button>
+    <button type="button" class="btn" data-acao="limpar-par">
+      Limpar
+    </button>
+  </div>
+
+  <div class="zona-arquivo" data-zona="arquivo-par">
+    <label for="arquivo-par">Importar arquivo (.txt ou .fasta com 2 sequências):</label>
+    <input id="arquivo-par" type="file" accept=".txt,.fasta,.fa,text/plain" data-campo="arquivo">
+  </div>
+</div>
