@@ -566,6 +566,9 @@ class TestSemInterpretacaoNoJS(unittest.TestCase):
             t = arq.read_text(encoding="utf-8").lower()
             for termo in ("missense", "nonsense", "frameshift", "silenciosa"):
                 self.assertNotIn(termo, t, f"{arq.name}: {termo}")
+            # R1: sem chaves/strings montadas por fragmentos para fugir das verificações
+            self.assertIsNone(re.search(r"\[\s*\[\s*['\"][^\]]*\]\s*\.join\(", t),
+                              f"{arq.name}: string montada por fragmentos")
 
 
 if __name__ == "__main__":
