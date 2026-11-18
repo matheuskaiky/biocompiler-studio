@@ -27,6 +27,13 @@ RAIZ = Path(__file__).resolve().parent.parent
 MAIN = RAIZ / "main.py"
 SEP_TRACO = "-" * 40
 PROMPT = "[Enter] próximo, p pula, q sai: "
+P_LOTE = ("Cole as sequências (uma por linha) ou informe o caminho de um arquivo .txt; "
+          "linha vazia encerra:\n")
+P_SEQ1 = "Seq1 (ou caminho de arquivo .txt/.fasta): "
+P_SEQ2 = "Seq2: "
+P_METODO = "Método (local/global/both) [{}]: "
+P_PARAM = "Match [{}]: Mismatch [{}]: Gap [{}]: "
+P_MENU = "Escolha a atividade: 1) AT1  2) AT2  3) AT3  4) AT4  (q para sair): "
 CAP = "m7Gppp"
 A100 = "A" * 100
 
@@ -232,6 +239,16 @@ class TestJson(Temp):
         self.assertEqual(ler(self.dir / item["saidas"][0]),
                          "linha;status;resultado;pre_mRNA\n1;OK;CORRETO;AUGGCUAAACCGUAA\n")
 
+    def test_json_lote_todos_os_objetos_listam_o_arquivo(self):
+        self.escrever("e.txt", "ATGGCTAAACCGTAA\nCCCGCTAAACCGTAA\n")
+        rc, out, err = cli("at1", "-i", "e.txt", "--format", "json", "--out-dir", "r",
+                           cwd=self.dir)
+        self.assertEqual(rc, 2, err)
+        doc = json.loads(out)
+        self.assertEqual(len(doc), 2)
+        caminho = str(Path("r") / "at1_resultados.txt")
+        self.assertEqual([d["saidas"] for d in doc], [[caminho], [caminho]])
+
     def test_json_at4(self):
         rc, out, err = cli("at4", "--seq1", "acgtac", "--seq2", "ACGTTC", "--format", "json",
                            "--out-dir", "r", cwd=self.dir)
@@ -396,6 +413,14 @@ class TestStep(Temp):
             + "PASSO A PASSO — GLOBAL\n" + "".join(f"{l}\n" for l in exports.passos(rg))
             + exports.relatorio_at4(rg) + exports.texto_comparacao(rl, rg)))
 
+    def test_step_format_text_explicito_e_valido(self):
+        r = transcrever_dna("ATGGCTAAACCGTAA")
+        rc, out, err = tty("at1", "--seq", "ATGGCTAAACCGTAA", "--step", "--format", "text",
+                           "--no-save", cwd=self.dir, dados="q\n")
+        self.assertEqual(rc, 0, err)
+        self.assertEqual(out.count(PROMPT), 1)
+        self.assertTrue(out.endswith(exports.bloco_lote("at1", 1, r)))
+
     def test_step_exige_terminal_e_combinacoes(self):
         rc, out, err = cli("at1", "--seq", "ATG", "--step", "--no-save", cwd=self.dir)
         self.assertEqual((rc, out), (1, ""))
@@ -426,6 +451,7 @@ class TestInterativo(Temp):
         rc, out, err = tty("at1", cwd=self.dir,
                            dados="ATGGCTAAACCGTAA\nATGGCTXAACCGTAA\n\n")
         self.assertEqual(rc, 2, err)
+        self.assertTrue(out.startswith(P_LOTE))
         res = [transcrever_dna(AT1_CASOS[0]), transcrever_dna(AT1_CASOS[1])]
         self.assertIn(exports.relatorio_lote("at1", res), out)
         self.assertEqual(ler(self.dir / "saidas" / "at1_resultados.txt"),
@@ -436,6 +462,7 @@ class TestInterativo(Temp):
         rc, out, err = tty("at3", "--interactive", "--no-save", "--format", "csv",
                            cwd=self.dir, dados="e.txt\n")
         self.assertEqual(rc, 2, err)
+        self.assertEqual(out, P_LOTE + exports.csv_lote("at3", [traduzir_mrna(s) for s in AT3_CASOS]))
         self.assertIn(exports.csv_lote("at3", [traduzir_mrna(s) for s in AT3_CASOS]), out)
 
     def test_lote_vazio(self):
@@ -447,7 +474,8 @@ class TestInterativo(Temp):
         rc, out, err = tty("at4", cwd=self.dir, dados="ACGTAC\nACGTTC\nglobal\n\n\n\n")
         self.assertEqual(rc, 0, err)
         r = alinhar_dna("ACGTAC", "ACGTTC", "global", 2, -1, -2)
-        self.assertIn(exports.relatorio_at4(r), out)
+        self.assertEqual(out, P_SEQ1 + P_SEQ2 + P_METODO.format("both")
+                         + P_PARAM.format(2, -1, -2) + exports.relatorio_at4(r))
         self.assertEqual(sorted(p.name for p in (self.dir / "saidas" / "at4").iterdir()),
                          ["alinhamento_global.csv", "alinhamento_global.txt",
                           "matriz_pontuacao_global.csv", "matriz_traceback_global.csv"])
@@ -456,6 +484,8 @@ class TestInterativo(Temp):
         rc, out, err = tty("at4", "--no-save", cwd=self.dir,
                            dados="ACGT\nACGT\nxyz\nlocal\n3\n\n-5\n")
         self.assertEqual(rc, 0, err)
+        self.assertTrue(out.startswith(P_SEQ1 + P_SEQ2 + P_METODO.format("both") * 2
+                                       + P_PARAM.format(2, -1, -2)))
         self.assertIn(exports.relatorio_at4(alinhar_dna("ACGT", "ACGT", "local", 3, -1, -5)), out)
 
     def test_at4_parametro_invalido_vai_ao_nucleo(self):
@@ -466,8 +496,12 @@ class TestInterativo(Temp):
 
     def test_at4_arquivo_fasta(self):
         self.escrever("par.fasta", ">a\nACGTAC\n>b\nACGTTC\n")
-        rc, out, err = tty("at4", "--no-save", cwd=self.dir, dados="par.fasta\nboth\n\n\n\n")
+        rc, out, err = tty("at4", "--no-save", "--method", "local", "--match", "3",
+                           cwd=self.dir, dados="par.fasta\nboth\n2\n\n\n")
         self.assertEqual(rc, 0, err)
+        # Com arquivo, a Seq2 não é perguntada: logo após Seq1 vem o método.
+        self.assertTrue(out.startswith(P_SEQ1 + P_METODO.format("local")
+                                       + P_PARAM.format(3, -1, -2) + "=" * 40 + "\n"))
         rl = alinhar_dna("ACGTAC", "ACGTTC", "local", 2, -1, -2)
         rg = alinhar_dna("ACGTAC", "ACGTTC", "global", 2, -1, -2)
         self.assertIn(exports.relatorio_at4(rl) + exports.relatorio_at4(rg)
@@ -495,6 +529,7 @@ class TestInterativo(Temp):
     def test_menu_sem_comando(self):
         rc, out, err = tty(cwd=self.dir, dados="9\n1\nATGGCTAAACCGTAA\n\n")
         self.assertEqual(rc, 0, err)
+        self.assertTrue(out.startswith(P_MENU * 2 + P_LOTE))
         self.assertIn(exports.bloco_lote("at1", 1, transcrever_dna("ATGGCTAAACCGTAA")), out)
         self.assertTrue((self.dir / "saidas" / "at1_resultados.txt").exists())
         rc, out, err = tty(cwd=self.dir, dados="4\nACGT\nACGT\nlocal\n\n\n\n")
@@ -504,8 +539,8 @@ class TestInterativo(Temp):
             with self.subTest(dados=dados):
                 d = self.dir / "vazio"
                 d.mkdir(exist_ok=True)
-                rc, _, _ = tty(cwd=d, dados=dados)
-                self.assertEqual(rc, 0)
+                rc, out, _ = tty(cwd=d, dados=dados)
+                self.assertEqual((rc, out), (0, P_MENU))
                 self.assertEqual(list(d.iterdir()), [])
 
     def test_sem_terminal_mantem_comportamento(self):
