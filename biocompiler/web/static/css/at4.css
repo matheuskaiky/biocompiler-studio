@@ -1,0 +1,90 @@
+/* Coreografia e instrumentos de exploração da matriz AT4 (Frente B). */
+
+.at4-barra-zoom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-2, 8px);
+}
+
+.at4-zoom-controles {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.at4-grade-embrulho {
+  position: relative;
+  display: inline-block;
+  --at4-zoom: 1;
+}
+
+[data-viz="at4"] .tabela-matriz td,
+[data-viz="at4"] .tabela-matriz th {
+  min-width: calc(44px * var(--at4-zoom, 1));
+  height: calc(36px * var(--at4-zoom, 1));
+  font-size: calc(13px * var(--at4-zoom, 1));
+  transition: background-color var(--dur-micro, 120ms) var(--curva-padrao, ease),
+              border-color var(--dur-micro, 120ms) var(--curva-padrao, ease);
+}
+
+.at4-deps-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 3;
+  overflow: visible;
+}
+
+.at4-dep-curva {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.9;
+}
+
+.at4-dep-diagonal {
+  stroke: var(--cor-ok, #30b87a);
+}
+
+.at4-dep-vertical {
+  stroke: var(--cor-pre-mrna, #22b8cf);
+  stroke-dasharray: 5 3;
+}
+
+.at4-dep-horizontal {
+  stroke: var(--cor-splicing, #8b7ae8);
+  stroke-dasharray: 2 3;
+}
+
+.at4-dep-vencedora {
+  stroke-width: 3;
+  opacity: 1;
+}
+
+.at4-seta-linha {
+  stroke: var(--cor-alinhamento, #e09f24);
+  stroke-width: 2.2;
+}
+
+.at4-seta-diagonal {
+  stroke-dasharray: none;
+}
+
+.at4-seta-vertical {
+  stroke-dasharray: 5 3;
+}
+
+.at4-seta-horizontal {
+  stroke-dasharray: 2 3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-viz="at4"] .tabela-matriz td,
+  [data-viz="at4"] .tabela-matriz th {
+    transition: none !important;
+  }
+}

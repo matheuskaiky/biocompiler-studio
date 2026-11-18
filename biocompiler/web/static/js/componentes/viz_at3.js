@@ -1,6 +1,10 @@
-/* Visualização SVG interativa da AT3 (Ribossomo, tradução de códons e cadeia polipeptídica). */
+/* Visualização SVG interativa da AT3 (Ribossomo deslizante, códons sincronizados e cadeia polipeptídica). */
 
 import { el, limpar } from "../dom.js";
+import { criarAminoacido, criarCodon } from "../motor/componentes_cientificos.js";
+import { desenharConexao, limparConexoes } from "../motor/conexao.js";
+import { estadoGlobal } from "../motor/estado.js";
+import { animar, movimentoReduzido } from "../motor/orquestrador.js";
 import {
   PASSO_X,
   TAM_JANELA,
@@ -11,11 +15,14 @@ import {
   ultimoEventoComPosicao,
 } from "./viz_comum.js";
 
+const NS_SVG = "http:" + "//www.w3.org/2000/svg";
+
 export function criarVizAT3(conteiner, onInspecionar, onCodonsPercorridos) {
   let registro = null;
   let passoAtual = 1;
   let passos = [];
   let janelaIdx = 0;
+  let xRiboAnterior = null;
 
   function desenhar() {
     limpar(conteiner);
@@ -45,7 +52,6 @@ export function criarVizAT3(conteiner, onInspecionar, onCodonsPercorridos) {
 
     const raiz = el("div", { class: "viz-palco", "data-viz": "at3" });
 
-    // CAP e cauda como blocos à parte (sem [data-base] dentro)
     const evCap = passos.find((e) => e.tipo === "CAP_VALIDADA");
     const textoCap = dados.cap || (dados.cap_ok && evCap ? evCap.detalhe : "");
     const tamCauda = dados.tamanho_cauda !== undefined && dados.tamanho_cauda !== null
@@ -64,6 +70,7 @@ export function criarVizAT3(conteiner, onInspecionar, onCodonsPercorridos) {
 
     const barraJanela = criarBarraJanela(total, janelaIdx, (novoIdx) => {
       janelaIdx = novoIdx;
+      xRiboAnterior = null;
       desenhar();
     });
     if (barraJanela) raiz.appendChild(barraJanela);
@@ -83,63 +90,66 @@ export function criarVizAT3(conteiner, onInspecionar, onCodonsPercorridos) {
     const yFita = 64;
     const pStart = dados.posicao_start;
     const pStop = dados.posicao_stop;
+    const jaStop = tipos.has("STOP_ENCONTRADO") || tipos.has("STOP_EM_FASE");
+    const concluida = jaStop && (tipos.has("PROTEINA_GERADA") || tipos.has("RESULTADO") || passoAtual >= passos.length);
 
-    // Ribossomo SVG envolvendo a fita (subunidade maior acima, menor abaixo)
     let posRibo = pStart !== null && pStart !== undefined ? pStart : 0;
-    if (codonAtualIdx !== null && traduzidos[codonAtualIdx].posicao !== null) {
+    if (jaStop && pStop !== null && pStop !== undefined) {
+      posRibo = pStop;
+    } else if (codonAtualIdx !== null && traduzidos[codonAtualIdx].posicao !== null) {
       posRibo = traduzidos[codonAtualIdx].posicao;
     }
     const localRibo = Math.max(0, Math.min(Math.max(0, fim - ini - 3), posRibo - ini));
     const xRibo = 10 + localRibo * PASSO_X;
+    const yRibo = yFita - 32;
+
     const gRibo = svgEl("g", {
       class: "ribossomo-grupo",
       "data-ribossomo": "",
       "data-codon-atual": codonAtualIdx === null ? "" : String(codonAtualIdx),
-      transform: `translate(${xRibo}, ${yFita - 32})`,
+      "data-parado": jaStop ? "true" : "false",
+      transform: `translate(${xRibo}, ${yRibo})`,
     }, [
       svgEl("rect", {
-        x: -2,
-        y: 0,
-        width: PASSO_X * 3 + 2,
-        height: 76,
-        rx: 14,
-        fill: "color-mix(in srgb, var(--cor-traducao) 9%, transparent)",
-        stroke: "var(--cor-traducao)",
-        "stroke-width": 1.2,
-        "stroke-dasharray": "4 3",
-      }),
-      svgEl("rect", {
+        class: "ribossomo-janela",
         x: 0,
-        y: 2,
-        width: PASSO_X * 3 - 2,
-        height: 20,
-        rx: 10,
-        fill: "color-mix(in srgb, var(--cor-traducao) 26%, var(--superficie))",
-        stroke: "var(--cor-traducao)",
-        "stroke-width": 1.5,
+        y: 0,
+        width: PASSO_X * 3 - 4,
+        height: 78,
+        rx: 14,
+      }),
+      svgEl("path", {
+        class: "ribossomo-subunidade-maior",
+        d: `M 2 22 C 2 5, ${Math.round((PASSO_X * 3 - 4) * 0.25)} 1, ${Math.round((PASSO_X * 3 - 4) / 2)} 1 C ${Math.round((PASSO_X * 3 - 4) * 0.75)} 1, ${PASSO_X * 3 - 6} 5, ${PASSO_X * 3 - 6} 22 Z`,
       }),
       svgEl("rect", {
+        class: "ribossomo-subunidade-menor",
         x: 6,
         y: 62,
-        width: PASSO_X * 3 - 14,
+        width: PASSO_X * 3 - 16,
         height: 12,
         rx: 6,
-        fill: "color-mix(in srgb, var(--cor-traducao) 18%, var(--superficie))",
-        stroke: "var(--cor-traducao)",
-        "stroke-width": 1,
       }),
       svgEl("text", {
-        x: (PASSO_X * 3 - 2) / 2,
+        x: (PASSO_X * 3 - 4) / 2,
         y: 12,
         class: "svg-regua-texto",
         "text-anchor": "middle",
         "dominant-baseline": "central",
-        text: codonAtualCodigo || "Ribossomo",
+        text: jaStop ? "STOP" : (codonAtualCodigo || "Ribossomo"),
       }),
     ]);
     svg.appendChild(gRibo);
 
-    // Fita de mRNA (regiao_transcrita)
+    if (!movimentoReduzido() && xRiboAnterior !== null && xRiboAnterior !== xRibo) {
+      animar(gRibo, [
+        { transform: `translate(${xRiboAnterior}px, ${yRibo}px)` },
+        { transform: `translate(${xRibo}px, ${yRibo}px)` },
+      ], { duration: 240, easing: "cubic-bezier(0.22, 1, 0.36, 1)" });
+    }
+    xRiboAnterior = xRibo;
+
+    // Fita de mRNA
     const grupoMrna = svgEl("g", { "data-fita": "mrna" });
     preencherFitaBases(grupoMrna, regiao, ini, fim, yFita, { onInspecionar, comRegua: true });
     svg.appendChild(grupoMrna);
@@ -154,8 +164,7 @@ export function criarVizAT3(conteiner, onInspecionar, onCodonsPercorridos) {
         "data-indice": String(pStart),
       }, () => onInspecionar && onInspecionar(pStart)));
     }
-    if ((tipos.has("STOP_ENCONTRADO") || tipos.has("STOP_EM_FASE"))
-        && pStop !== null && pStop !== undefined && pStop >= ini && pStop < fim) {
+    if (jaStop && pStop !== null && pStop !== undefined && pStop >= ini && pStop < fim) {
       const x = 12 + (pStop - ini) * PASSO_X + 12;
       grupoMarcas.appendChild(criarMarcaSvg(x, yMarcas, "STOP", "svg-marca-stop", {
         "data-marca": "stop",
@@ -164,30 +173,100 @@ export function criarVizAT3(conteiner, onInspecionar, onCodonsPercorridos) {
     }
     svg.appendChild(grupoMarcas);
 
-    raiz.appendChild(el("div", { class: "fita-scroll" }, [svg]));
+    // Códons traduzidos alinhados sob a fita (dentro de .fita-scroll para manter centro idêntico)
+    const palcoTrad = el("div", { class: "at3-palco-traducao" });
+    const camadaConexao = document.createElementNS(NS_SVG, "svg");
+    camadaConexao.setAttribute("class", "at3-conexao-svg");
+    camadaConexao.setAttribute("aria-hidden", "true");
 
-    // Cadeia polipeptídica em contas encadeadas
-    const cadeia = el("div", { class: "cadeia-aa", "data-cadeia": "" });
-    for (const ev of traduzidos) {
-      const partes = (ev.detalhe || "").split(":");
-      const aa = (partes[1] || partes[0] || "").trim();
-      cadeia.appendChild(el("span", { class: "aa-conta", "data-aminoacido": "", text: aa }));
+    const faixaCodons = el("div", { class: "codons-faixa-alinhada", "data-regiao": "codons-mrna" });
+    faixaCodons.style.width = `${largura}px`;
+
+    const cadeia = el("div", {
+      class: "cadeia-aa",
+      "data-cadeia": "",
+      ...(concluida ? { "data-concluida": "true" } : {}),
+    });
+
+    const codonEls = [];
+    const aaEls = [];
+
+    function aplicarSelecao(ordem) {
+      const selValida = Number.isInteger(ordem) && ordem >= 0 && ordem < codonEls.length ? ordem : null;
+      estadoGlobal.definir({ selecao: selValida });
+      for (let idx = 0; idx < codonEls.length; idx += 1) {
+        const ativo = idx === selValida;
+        codonEls[idx].classList.toggle("selecionado", ativo);
+        aaEls[idx].classList.toggle("selecionado", ativo);
+        codonEls[idx].setAttribute("aria-pressed", ativo ? "true" : "false");
+        aaEls[idx].setAttribute("aria-pressed", ativo ? "true" : "false");
+        if (ativo) {
+          codonEls[idx].setAttribute("data-selecionado", "true");
+          aaEls[idx].setAttribute("data-selecionado", "true");
+        } else {
+          codonEls[idx].removeAttribute("data-selecionado");
+          aaEls[idx].removeAttribute("data-selecionado");
+        }
+      }
+      if (selValida !== null) {
+        desenharConexao(camadaConexao, codonEls[selValida], aaEls[selValida], {
+          id: `aa-codon-${selValida}`,
+        });
+      } else {
+        limparConexoes(camadaConexao);
+      }
     }
+
+    traduzidos.forEach((ev, idx) => {
+      const partes = (ev.detalhe || "").split(":");
+      const trinca = (partes[0] || "").trim();
+      const aa = (partes[1] || partes[0] || "").trim();
+      const posCodon = ev.posicao !== null && ev.posicao !== undefined ? ev.posicao : idx * 3;
+
+      const onToggle = () => {
+        const atual = estadoGlobal.obter().selecao;
+        aplicarSelecao(atual === idx ? null : idx);
+        if (onInspecionar) onInspecionar(posCodon);
+      };
+
+      const codonEl = criarCodon(trinca, idx, posCodon, { onClick: onToggle });
+      const leftPos = 10 + Math.max(0, posCodon - ini) * PASSO_X;
+      codonEl.style.left = `${leftPos}px`;
+      codonEl.style.width = `${PASSO_X * 3 - 4}px`;
+
+      const aaEl = criarAminoacido(aa, idx, { onClick: onToggle });
+      codonEls.push(codonEl);
+      aaEls.push(aaEl);
+      faixaCodons.appendChild(codonEl);
+      cadeia.appendChild(aaEl);
+    });
+
     if (!traduzidos.length) {
       cadeia.appendChild(el("span", { class: "texto-suave", text: "Nenhum aminoácido traduzido até este passo." }));
     }
-    raiz.appendChild(el("div", {}, [
+
+    palcoTrad.appendChild(camadaConexao);
+    palcoTrad.appendChild(el("div", { class: "fita-scroll" }, [svg, traduzidos.length ? faixaCodons : null]));
+    palcoTrad.appendChild(el("div", { class: "at3-subbloco" }, [
       el("h3", { text: "Cadeia polipeptídica" }),
       cadeia,
     ]));
 
+    raiz.appendChild(palcoTrad);
     conteiner.appendChild(raiz);
+
+    const selAtual = estadoGlobal.obter().selecao;
+    if (Number.isInteger(selAtual) && selAtual >= 0 && selAtual < codonEls.length) {
+      aplicarSelecao(selAtual);
+    }
   }
 
   function definirRegistro(novoReg) {
     registro = novoReg;
     passos = (registro && registro.passos) || [];
     janelaIdx = 0;
+    xRiboAnterior = null;
+    estadoGlobal.limparSelecao();
   }
 
   function atualizar(k, novosPassos) {

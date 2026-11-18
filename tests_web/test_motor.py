@@ -102,8 +102,13 @@ class TestLinhaDoTempo(BaseViz):
             for k, e in enumerate(r.eventos, start=1):
                 primeiros.setdefault(e.tipo, k)
             self.executar(caminho, {"seq": seq, "modo": "rapido"})
-            marcos = self.js(f"Array.from(document.querySelectorAll('{LINHA} [data-marco]'))"
-                             ".map(m => [m.getAttribute('data-tipo'), +m.getAttribute('data-passo')])")
+            consulta = (f"Array.from(document.querySelectorAll('{LINHA} [data-marco]'))"
+                        ".map(m => [m.getAttribute('data-tipo'), +m.getAttribute('data-passo')])")
+            for _ in range(20):  # sob carga, aguarda os marcos (asserção inalterada)
+                marcos = self.js(consulta)
+                if marcos:
+                    break
+                self.pausa(150)
             with self.subTest(at=at, n=len(r.eventos)):
                 self.assertEqual(sorted(marcos), sorted([t, k] for t, k in primeiros.items()),
                                  "um marco por tipo de evento, no primeiro passo daquele tipo")

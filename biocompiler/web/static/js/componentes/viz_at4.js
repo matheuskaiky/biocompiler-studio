@@ -2,6 +2,7 @@
 
 import { inspecionarCelula } from "../api.js";
 import { el, limpar } from "../dom.js";
+import { animar, movimentoReduzido } from "../motor/orquestrador.js";
 import { NS_SVG } from "./viz_comum.js";
 
 const LIMITE_GRADE_DOM = 10000;
@@ -14,11 +15,17 @@ export function criarVizAT4(conteiner) {
   let passos = [];
   let preenchidoCount = 0;
   let ultimaCelula = null;
+  let celulaInspecionada = null;
   let cursor = { i: 0, j: 0 };
+  let zoom = 1;
+  let chaveSeqMontada = null;
 
+  let palcoEl = null;
   let celulasDom = [];
   let gradeEmbrulho = null;
   let svgSetas = null;
+  let svgDeps = null;
+  let zoomLabelEl = null;
   let regPreenchimento = null;
   let regCelulaAtual = null;
   let regAlinhamento = null;
@@ -67,6 +74,8 @@ export function criarVizAT4(conteiner) {
   }
 
   async function consultarCelula(i, j) {
+    celulaInspecionada = [i, j];
+    desenharDependencias(i, j);
     if (!envelope || !regInspetor) return;
     const dados = envelope.dados || {};
     limpar(regInspetor);
@@ -125,6 +134,48 @@ export function criarVizAT4(conteiner) {
     }
   }
 
+  function desenharDependencias(i, j, vencedor = null) {
+    if (!svgDeps || !gradeEmbrulho) return;
+    limpar(svgDeps);
+    if (!Number.isInteger(i) || !Number.isInteger(j) || i < 1 || j < 1) return;
+    const tdDest = celulasDom[i] && celulasDom[i][j];
+    if (!tdDest) return;
+
+    const specs = [
+      { tipo: "diagonal", oi: i - 1, oj: j - 1, curva: -10 },
+      { tipo: "vertical", oi: i - 1, oj: j, curva: 8 },
+      { tipo: "horizontal", oi: i, oj: j - 1, curva: -8 },
+    ];
+
+    const x2 = tdDest.offsetLeft + tdDest.offsetWidth / 2;
+    const y2 = tdDest.offsetTop + tdDest.offsetHeight / 2;
+
+    for (const sp of specs) {
+      const tdOrig = celulasDom[sp.oi] && celulasDom[sp.oi][sp.oj];
+      if (!tdOrig) continue;
+      const x1 = tdOrig.offsetLeft + tdOrig.offsetWidth / 2;
+      const y1 = tdOrig.offsetTop + tdOrig.offsetHeight / 2;
+      const mx = (x1 + x2) / 2 + (sp.tipo === "vertical" ? sp.curva : 0);
+      const my = (y1 + y2) / 2 + (sp.tipo !== "vertical" ? sp.curva : 0);
+      const path = document.createElementNS(NS_SVG, "path");
+      path.setAttribute("d", `M ${x1} ${y1} Q ${mx} ${my} ${x2} ${y2}`);
+      path.setAttribute("class", `at4-dep-curva at4-dep-${sp.tipo}${vencedor === sp.tipo ? " at4-dep-vencedora" : ""}`);
+      path.setAttribute("data-dependencia", sp.tipo);
+      path.setAttribute("data-de", `${sp.oi},${sp.oj}`);
+      svgDeps.appendChild(path);
+
+      if (!movimentoReduzido() && typeof path.getTotalLength === "function") {
+        const comp = path.getTotalLength() || 60;
+        path.style.strokeDasharray = `${comp}`;
+        path.style.strokeDashoffset = `${comp}`;
+        animar(path, [
+          { strokeDashoffset: comp, opacity: 0.3 },
+          { strokeDashoffset: 0, opacity: 0.95 },
+        ], { duration: 200, fill: "forwards" });
+      }
+    }
+  }
+
   function desenharSetas(caminhoVisivel) {
     if (!svgSetas || !gradeEmbrulho) return;
     limpar(svgSetas);
@@ -150,6 +201,14 @@ export function criarVizAT4(conteiner) {
     for (let idx = 1; idx < caminhoVisivel.length; idx += 1) {
       const [i1, j1] = caminhoVisivel[idx - 1];
       const [i2, j2] = caminhoVisivel[idx];
+      const di = i1 - i2;
+      const dj = j1 - j2;
+      const direcao = di === 1 && dj === 1
+        ? "diagonal"
+        : di === 1 && dj === 0
+          ? "vertical"
+          : "horizontal";
+
       const td1 = celulasDom[i1] && celulasDom[i1][j1];
       const td2 = celulasDom[i2] && celulasDom[i2][j2];
       const x1 = usaMedicao && td1 ? td1.offsetLeft + td1.offsetWidth / 2 : (j1 + 1) * 44 + 22;
@@ -158,8 +217,11 @@ export function criarVizAT4(conteiner) {
       const y2 = usaMedicao && td2 ? td2.offsetTop + td2.offsetHeight / 2 : (i2 + 1) * 32 + 16;
 
       const line = document.createElementNS(NS_SVG, "line");
-      line.setAttribute("class", "at4-seta-linha");
+      line.setAttribute("class", `at4-seta-linha at4-seta-${direcao}`);
       line.setAttribute("data-seta", "");
+      line.setAttribute("data-de", `${i1},${j1}`);
+      line.setAttribute("data-para", `${i2},${j2}`);
+      line.setAttribute("data-direcao", direcao);
       line.setAttribute("x1", String(x1));
       line.setAttribute("y1", String(y1));
       line.setAttribute("x2", String(x2));
@@ -373,6 +435,8 @@ export function criarVizAT4(conteiner) {
     celulasDom = [];
     gradeEmbrulho = null;
     svgSetas = null;
+    svgDeps = null;
+    palcoEl = null;
     canvasEl = null;
     cacheCanvas = null;
 
@@ -385,6 +449,7 @@ export function criarVizAT4(conteiner) {
       "data-viz": "at4",
       "data-alinhamento": dados.metodo || "",
     });
+    palcoEl = palco;
 
     if (total > LIMITE_CANVAS_CELULAS) {
       palco.appendChild(el("div", { class: "barra-status", "data-regiao": "aviso-matriz" }, [
@@ -454,6 +519,7 @@ export function criarVizAT4(conteiner) {
     palco.appendChild(regPreenchimento);
 
     if (total > LIMITE_GRADE_DOM) {
+      chaveSeqMontada = null;
       regCursor = el("div", {
         class: "chip mono",
         "data-regiao": "cursor-matriz",
@@ -488,11 +554,12 @@ export function criarVizAT4(conteiner) {
     } else {
       const seq1 = dados.seq1 || "";
       const seq2 = dados.seq2 || "";
+      chaveSeqMontada = `${seq1}|${seq2}`;
       const thead = el("thead", {}, [
         el("tr", {}, [
           el("th", { text: "" }),
           el("th", { text: "—" }),
-          ...seq2.split("").map((b) => el("th", { text: b })),
+          ...seq2.split("").map((b) => el("th", { "data-cabecalho-seq": "", text: b })),
         ]),
       ]);
       const tbody = el("tbody");
@@ -512,7 +579,7 @@ export function criarVizAT4(conteiner) {
 
       for (let i = 0; i < linhas; i += 1) {
         const tr = el("tr");
-        tr.appendChild(el("th", { text: i === 0 ? "—" : seq1[i - 1] }));
+        tr.appendChild(el("th", i === 0 ? { text: "—" } : { "data-cabecalho-seq": "", text: seq1[i - 1] }));
         for (let j = 0; j < colunas; j += 1) {
           const td = el("td", {
             role: "gridcell",
@@ -547,7 +614,46 @@ export function criarVizAT4(conteiner) {
       const tabela = el("table", { class: "tabela-matriz", role: "grid" }, [thead, tbody]);
       svgSetas = document.createElementNS(NS_SVG, "svg");
       svgSetas.setAttribute("class", "at4-setas-svg");
-      gradeEmbrulho = el("div", { class: "at4-grade-embrulho" }, [tabela, svgSetas]);
+      svgDeps = document.createElementNS(NS_SVG, "svg");
+      svgDeps.setAttribute("class", "at4-deps-svg");
+      svgDeps.setAttribute("aria-hidden", "true");
+      gradeEmbrulho = el("div", { class: "at4-grade-embrulho" }, [tabela, svgSetas, svgDeps]);
+      gradeEmbrulho.style.setProperty("--at4-zoom", String(zoom));
+
+      const aplicarZoom = (novoZoom) => {
+        zoom = Math.max(0.7, Math.min(2.2, Math.round(novoZoom * 100) / 100));
+        if (gradeEmbrulho) gradeEmbrulho.style.setProperty("--at4-zoom", String(zoom));
+        if (zoomLabelEl) zoomLabelEl.textContent = `${Math.round(zoom * 100)}%`;
+        if (envelope) {
+          const est = calcularEstadoPasso(passoAtual);
+          desenharSetas((envelope.dados.caminho || []).slice(0, est.passosTb));
+          if (celulaInspecionada) desenharDependencias(celulaInspecionada[0], celulaInspecionada[1]);
+        }
+      };
+
+      zoomLabelEl = el("span", { class: "chip mono", text: `${Math.round(zoom * 100)}%` });
+      palco.appendChild(el("div", { class: "at4-barra-zoom" }, [
+        el("span", { class: "texto-suave", text: "Clique em uma célula para inspecionar dependências." }),
+        el("div", { class: "at4-zoom-controles" }, [
+          el("button", {
+            type: "button",
+            class: "btn btn-pequeno",
+            "data-acao": "zoom-menos",
+            "aria-label": "Reduzir zoom da matriz",
+            text: "−",
+            onClick: () => aplicarZoom(zoom - 0.2),
+          }),
+          zoomLabelEl,
+          el("button", {
+            type: "button",
+            class: "btn btn-pequeno",
+            "data-acao": "zoom-mais",
+            "aria-label": "Ampliar zoom da matriz",
+            text: "+",
+            onClick: () => aplicarZoom(zoom + 0.2),
+          }),
+        ]),
+      ]));
 
       if (typeof window.ResizeObserver === "function") {
         const ro = new window.ResizeObserver(() => {
@@ -555,11 +661,18 @@ export function criarVizAT4(conteiner) {
           const est = calcularEstadoPasso(passoAtual);
           const cam = (envelope.dados.caminho || []).slice(0, est.passosTb);
           desenharSetas(cam);
+          if (celulaInspecionada) desenharDependencias(celulaInspecionada[0], celulaInspecionada[1]);
         });
         ro.observe(gradeEmbrulho);
       }
 
-      palco.appendChild(el("div", { class: "matriz-scroll" }, [gradeEmbrulho]));
+      const scrollMatriz = el("div", { class: "matriz-scroll" }, [gradeEmbrulho]);
+      scrollMatriz.addEventListener("wheel", (ev) => {
+        if (!ev.ctrlKey) return;
+        ev.preventDefault();
+        aplicarZoom(zoom + (ev.deltaY < 0 ? 0.15 : -0.15));
+      }, { passive: false });
+      palco.appendChild(scrollMatriz);
     }
 
     regAlinhamento = el("div", { "data-regiao": "alinhamento-viz" });
@@ -574,12 +687,27 @@ export function criarVizAT4(conteiner) {
   }
 
   function definirAlinhamento(novoEnv, novosParams) {
+    const dados = novoEnv && novoEnv.dados ? novoEnv.dados : {};
+    const { total } = calcularTamanho(dados);
+    const novaChave = `${dados.seq1 || ""}|${dados.seq2 || ""}`;
+    const podeReusar = Boolean(
+      gradeEmbrulho
+      && total <= LIMITE_GRADE_DOM
+      && chaveSeqMontada === novaChave
+      && celulasDom.length === (dados.matriz || []).length
+    );
     envelope = novoEnv;
     paramsScore = novosParams || paramsScore;
     passos = (envelope && envelope.passos) || [];
     preenchidoCount = 0;
     ultimaCelula = null;
+    celulaInspecionada = null;
     cursor = { i: 0, j: 0 };
+    if (podeReusar) {
+      if (palcoEl) palcoEl.setAttribute("data-alinhamento", dados.metodo || "");
+      if (svgDeps) limpar(svgDeps);
+      return;
+    }
     construirCena();
   }
 

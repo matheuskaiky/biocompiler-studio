@@ -1,0 +1,58 @@
+/* Coreografia e desenho do Ribossomo na AT3 (Frente B). */
+
+.ribossomo-grupo {
+  will-change: transform;
+}
+
+.ribossomo-subunidade-maior {
+  fill: color-mix(in srgb, var(--cor-traducao, #30b87a) 22%, var(--superficie, #181a1d));
+  stroke: var(--cor-traducao, #30b87a);
+  stroke-width: 1.5;
+}
+
+.ribossomo-subunidade-menor {
+  fill: color-mix(in srgb, var(--cor-traducao, #30b87a) 15%, var(--superficie, #181a1d));
+  stroke: var(--cor-traducao, #30b87a);
+  stroke-width: 1.2;
+}
+
+.ribossomo-janela {
+  fill: color-mix(in srgb, var(--cor-traducao, #30b87a) 8%, transparent);
+  stroke: var(--cor-traducao, #30b87a);
+  stroke-width: 1.25;
+  stroke-dasharray: 4 3;
+}
+
+.ribossomo-grupo[data-parado="true"] .ribossomo-janela {
+  stroke: var(--cor-erro, #e5534b);
+  stroke-dasharray: none;
+  fill: color-mix(in srgb, var(--cor-erro, #e5534b) 10%, transparent);
+}
+
+.codons-faixa-alinhada {
+  position: relative;
+  height: 36px;
+  margin-top: var(--esp-2, 8px);
+}
+
+.codons-faixa-alinhada .codon-grupo {
+  position: absolute;
+  top: 0;
+  padding: 5px 4px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.cadeia-aa[data-concluida="true"] {
+  padding: var(--esp-2, 8px);
+  border-radius: var(--raio-medio, 10px);
+  border: 1px solid color-mix(in srgb, var(--cor-traducao, #30b87a) 55%, var(--separador, rgba(255, 255, 255, 0.14)));
+  background: color-mix(in srgb, var(--cor-traducao, #30b87a) 8%, var(--superficie, #181a1d));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ribossomo-grupo {
+    transition: none !important;
+    animation: none !important;
+  }
+}

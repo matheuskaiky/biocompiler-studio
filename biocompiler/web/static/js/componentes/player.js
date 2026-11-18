@@ -1,22 +1,49 @@
-/* Player de eventos sincronizado com visualizações e linha do tempo. */
+/* Player de eventos sincronizado com linha do tempo acessível, vidro e orquestrador. */
 
 import { movimentoReduzido, obterModoAtual } from "../app.js";
 import { el, limpar } from "../dom.js";
+import { estadoGlobal } from "../motor/estado.js";
+import { cancelarTudo } from "../motor/orquestrador.js";
 import { descreverEvento } from "./inspetor.js";
 
 const BASE_MS = 800;
 const NS_SVG = "http:" + "//www.w3.org/2000/svg";
 
-function iconeSvg(d) {
+function criarIcone(nome) {
   const svg = document.createElementNS(NS_SVG, "svg");
-  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("viewBox", "0 0 20 20");
   svg.setAttribute("width", "16");
   svg.setAttribute("height", "16");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("stroke", "currentColor");
+  svg.setAttribute("stroke-width", "1.8");
+  svg.setAttribute("stroke-linecap", "round");
+  svg.setAttribute("stroke-linejoin", "round");
   svg.setAttribute("aria-hidden", "true");
-  const path = document.createElementNS(NS_SVG, "path");
-  path.setAttribute("fill", "currentColor");
-  path.setAttribute("d", d);
-  svg.appendChild(path);
+  svg.setAttribute("data-icone", nome);
+
+  const add = (tag, attrs) => {
+    const node = document.createElementNS(NS_SVG, tag);
+    for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, String(v));
+    svg.appendChild(node);
+  };
+
+  if (nome === "reproduzir") {
+    add("polygon", { points: "6,4 16,10 6,16", fill: "currentColor", stroke: "none" });
+  } else if (nome === "pausar") {
+    add("line", { x1: 7, y1: 4.5, x2: 7, y2: 15.5 });
+    add("line", { x1: 13, y1: 4.5, x2: 13, y2: 15.5 });
+  } else if (nome === "inicio") {
+    add("line", { x1: 5, y1: 4.5, x2: 5, y2: 15.5 });
+    add("polyline", { points: "14,4.5 8.5,10 14,15.5" });
+  } else if (nome === "anterior") {
+    add("polyline", { points: "12.5,4.5 7,10 12.5,15.5" });
+  } else if (nome === "proximo") {
+    add("polyline", { points: "7.5,4.5 13,10 7.5,15.5" });
+  } else if (nome === "fim") {
+    add("polyline", { points: "6,4.5 11.5,10 6,15.5" });
+    add("line", { x1: 15, y1: 4.5, x2: 15, y2: 15.5 });
+  }
   return svg;
 }
 
@@ -32,7 +59,10 @@ export function criarPlayer(conteiner, callbacks = {}) {
   let regPasso = null;
   let regEvento = null;
   let btnRep = null;
+  let trilha = null;
   let barraProg = null;
+  let alca = null;
+  let marcosEl = null;
   let selReg = null;
   let selVel = null;
 
@@ -42,6 +72,7 @@ export function criarPlayer(conteiner, callbacks = {}) {
       timer = null;
     }
     tocando = false;
+    cancelarTudo(document);
     atualizarBotaoRep();
   }
 
@@ -50,11 +81,7 @@ export function criarPlayer(conteiner, callbacks = {}) {
     btnRep.setAttribute("aria-pressed", tocando ? "true" : "false");
     btnRep.setAttribute("aria-label", tocando ? "Pausar" : "Reproduzir");
     limpar(btnRep);
-    btnRep.appendChild(iconeSvg(
-      tocando
-        ? "M6 5h4v14H6zm8 0h4v14h-4z"
-        : "M8 5v14l11-7z"
-    ));
+    btnRep.appendChild(criarIcone(tocando ? "pausar" : "reproduzir"));
   }
 
   function agendarProximo() {
@@ -89,15 +116,47 @@ export function criarPlayer(conteiner, callbacks = {}) {
     else iniciarReproducao();
   }
 
+  function atualizarMarcos() {
+    if (!marcosEl) return;
+    limpar(marcosEl);
+    const n = passos.length;
+    if (!n) return;
+    const vistos = new Set();
+    for (let idx = 0; idx < n; idx += 1) {
+      const tipo = passos[idx]?.tipo;
+      if (!tipo || vistos.has(tipo)) continue;
+      vistos.add(tipo);
+      const passo = idx + 1;
+      const pct = n > 1 ? ((passo - 1) / (n - 1)) * 100 : 0;
+      const marco = el("span", {
+        class: "linha-tempo-marco",
+        "data-marco": "",
+        "data-tipo": tipo,
+        "data-passo": String(passo),
+        title: `${tipo} (passo ${passo})`,
+      });
+      marco.style.left = `${pct}%`;
+      marcosEl.appendChild(marco);
+    }
+  }
+
   function notificar() {
     const n = passos.length;
     const ev = n ? passos[k - 1] : null;
     if (regPasso) {
       regPasso.textContent = n ? `Passo ${k} de ${n}` : "Passo 0 de 0";
     }
+    const pct = n > 1 ? ((k - 1) / (n - 1)) * 100 : (n === 1 ? 100 : 0);
     if (barraProg) {
-      const pct = n > 1 ? Math.round(((k - 1) / (n - 1)) * 100) : (n === 1 ? 100 : 0);
       barraProg.style.width = `${pct}%`;
+    }
+    if (alca) {
+      alca.style.left = `${pct}%`;
+    }
+    if (trilha) {
+      trilha.setAttribute("aria-valuemin", "1");
+      trilha.setAttribute("aria-valuemax", String(Math.max(1, n)));
+      trilha.setAttribute("aria-valuenow", String(k));
     }
     if (regEvento) {
       limpar(regEvento);
@@ -119,18 +178,29 @@ export function criarPlayer(conteiner, callbacks = {}) {
         regEvento.textContent = "Nenhum evento disponível.";
       }
     }
+    estadoGlobal.definir({ registro: indiceRegistro, passo: k });
     if (callbacks.onPasso) {
       callbacks.onPasso(k, passos, ev);
     }
   }
 
-  function irPara(novoK, interromper = true) {
+  function irPara(novoK, interromper = true, cancelarDepois = false) {
     if (interromper && tocando) parar();
     const n = passos.length;
     if (!n) return;
+    if (interromper) cancelarTudo(document);
     const limitado = Math.max(1, Math.min(n, novoK));
     k = limitado;
     notificar();
+    if (cancelarDepois) cancelarTudo(document);
+  }
+
+  function passoPorPosicaoX(clientX) {
+    const n = passos.length;
+    if (!n || !trilha) return 1;
+    const ret = trilha.getBoundingClientRect();
+    const frac = Math.max(0, Math.min(1, (clientX - ret.left) / (ret.width || 1)));
+    return 1 + Math.round(frac * (n - 1));
   }
 
   function montarEstrutura() {
@@ -138,8 +208,10 @@ export function criarPlayer(conteiner, callbacks = {}) {
     const raiz = el("section", {
       class: "player-barra",
       "data-componente": "player",
+      "data-superficie": "vidro",
       "aria-label": "Player de eventos",
       onKeydown: (ev) => {
+        if (ev.target === trilha) return;
         if (ev.key === "ArrowRight") {
           ev.preventDefault();
           irPara(k + 1);
@@ -210,7 +282,7 @@ export function criarPlayer(conteiner, callbacks = {}) {
       "aria-label": "Início",
       title: "Início (Home)",
       onClick: () => irPara(1),
-    }, [iconeSvg("M6 6h2v12H6zm3.5 6l8.5 6V6z")]);
+    }, [criarIcone("inicio")]);
 
     const btnAnt = el("button", {
       type: "button",
@@ -219,7 +291,7 @@ export function criarPlayer(conteiner, callbacks = {}) {
       "aria-label": "Passo anterior",
       title: "Anterior (←)",
       onClick: () => irPara(k - 1),
-    }, [iconeSvg("M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z")]);
+    }, [criarIcone("anterior")]);
 
     btnRep = el("button", {
       type: "button",
@@ -239,16 +311,16 @@ export function criarPlayer(conteiner, callbacks = {}) {
       "aria-label": "Próximo passo",
       title: "Próximo (→)",
       onClick: () => irPara(k + 1),
-    }, [iconeSvg("M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z")]);
+    }, [criarIcone("proximo")]);
 
     const btnFim = el("button", {
       type: "button",
       class: "btn btn-pequeno",
       "data-acao": "fim",
-      text: "Pular para o resultado",
+      "aria-label": "Pular para o resultado",
       title: "Ir para o fim (End)",
-      onClick: () => irPara(passos.length),
-    });
+      onClick: () => irPara(passos.length, true, true),
+    }, [criarIcone("fim"), el("span", { text: "Pular para o resultado" })]);
 
     selVel = el("select", {
       "data-campo": "velocidade",
@@ -277,15 +349,64 @@ export function criarPlayer(conteiner, callbacks = {}) {
     ]);
 
     barraProg = el("div", { class: "player-progresso-preenchimento" });
-    const trilha = el("div", {
-      class: "player-progresso-trilha",
-      onClick: (ev) => {
+    alca = el("span", { class: "linha-tempo-alca", "aria-hidden": "true" });
+    marcosEl = el("div", { class: "linha-tempo-marcos", "aria-hidden": "true" });
+
+    trilha = el("div", {
+      class: "player-progresso-trilha linha-tempo",
+      "data-componente": "linha-tempo",
+      role: "slider",
+      tabindex: "0",
+      "aria-label": "Linha do tempo dos eventos",
+      "aria-valuemin": "1",
+      "aria-valuemax": String(Math.max(1, passos.length)),
+      "aria-valuenow": String(k),
+      onMousedown: (ev) => {
         if (!passos.length) return;
-        const ret = trilha.getBoundingClientRect();
-        const frac = Math.max(0, Math.min(1, (ev.clientX - ret.left) / (ret.width || 1)));
-        irPara(Math.round(frac * (passos.length - 1)) + 1);
+        ev.preventDefault();
+        trilha.focus();
+        trilha.classList.add("arrastando");
+        irPara(passoPorPosicaoX(ev.clientX));
+        const aoMover = (mev) => {
+          irPara(passoPorPosicaoX(mev.clientX));
+        };
+        const aoSoltar = () => {
+          trilha.classList.remove("arrastando");
+          document.removeEventListener("mousemove", aoMover);
+          document.removeEventListener("mouseup", aoSoltar);
+        };
+        document.addEventListener("mousemove", aoMover);
+        document.addEventListener("mouseup", aoSoltar);
       },
-    }, [barraProg]);
+      onKeydown: (ev) => {
+        const n = passos.length;
+        if (!n) return;
+        if (ev.key === "ArrowRight") {
+          ev.preventDefault();
+          irPara(k + 1);
+        } else if (ev.key === "ArrowLeft") {
+          ev.preventDefault();
+          irPara(k - 1);
+        } else if (ev.key === "Home") {
+          ev.preventDefault();
+          irPara(1);
+        } else if (ev.key === "End") {
+          ev.preventDefault();
+          irPara(n);
+        } else if (ev.key === "PageDown") {
+          ev.preventDefault();
+          irPara(Math.min(n, k + 10));
+        } else if (ev.key === "PageUp") {
+          ev.preventDefault();
+          irPara(Math.max(1, k - 10));
+        } else if (ev.key === " ") {
+          ev.preventDefault();
+          alternarReproducao();
+        }
+      },
+    }, [barraProg, marcosEl, alca]);
+
+    atualizarMarcos();
 
     regEvento = el("div", { class: "player-evento", "data-regiao": "evento-atual" });
 
@@ -326,6 +447,7 @@ export function criarPlayer(conteiner, callbacks = {}) {
     const modo = obterModoAtual();
     const reduzido = movimentoReduzido();
     k = modo === "rapido" ? Math.max(1, passos.length) : 1;
+    atualizarMarcos();
     notificar();
     if (modo === "animado" && !reduzido && passos.length > 1) {
       iniciarReproducao();

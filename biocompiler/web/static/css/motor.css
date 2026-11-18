@@ -1,0 +1,172 @@
+/* Estilos do motor de reprodução, linha do tempo, conexões SVG e componentes científicos (Frente B). */
+
+.player-barra[data-componente="player"] {
+  position: sticky;
+  bottom: var(--esp-3, 12px);
+  z-index: 15;
+  border-radius: var(--raio-grande, 14px);
+}
+
+.player-barra .btn-icone {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: var(--raio-pilula, 999px);
+}
+
+.player-barra .btn-icone-principal {
+  width: 44px;
+  height: 44px;
+  background: var(--acento, var(--cor-destaque));
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.player-barra .btn-pequeno {
+  gap: 6px;
+  border-radius: var(--raio-pilula, 999px);
+}
+
+.player-passo {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Linha do tempo acessível (slider) com marcos */
+.linha-tempo {
+  position: relative;
+  height: 10px;
+  border-radius: var(--raio-pilula, 999px);
+  background: var(--superficie-elevada, #212428);
+  border: 1px solid var(--separador, rgba(255, 255, 255, 0.12));
+  overflow: visible;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.linha-tempo .player-progresso-preenchimento {
+  height: 100%;
+  border-radius: var(--raio-pilula, 999px);
+  background: var(--acento, var(--cor-destaque));
+  transition: width var(--dur-micro, 120ms) var(--curva-padrao, ease);
+}
+
+.linha-tempo.arrastando .player-progresso-preenchimento {
+  transition: none;
+}
+
+.linha-tempo-marcos {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.linha-tempo-marco {
+  position: absolute;
+  top: -3px;
+  width: 3px;
+  height: 14px;
+  border-radius: var(--raio-pilula, 999px);
+  background: var(--texto-terciario, #8a9099);
+  transform: translateX(-50%);
+  pointer-events: auto;
+  opacity: 0.85;
+}
+
+.linha-tempo-alca {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: var(--raio-pilula, 999px);
+  background: var(--texto, #f5f5f7);
+  border: 2px solid var(--acento, var(--cor-destaque));
+  box-shadow: var(--elevacao-1, 0 1px 2px rgba(0, 0, 0, 0.3));
+  transform: translate(-50%, -50%) scale(1);
+  transition: transform var(--dur-micro, 120ms) var(--curva-padrao, ease);
+  pointer-events: none;
+}
+
+.linha-tempo:hover .linha-tempo-alca,
+.linha-tempo:focus-visible .linha-tempo-alca,
+.linha-tempo.arrastando .linha-tempo-alca {
+  transform: translate(-50%, -50%) scale(1.28);
+}
+
+/* Seleção sincronizada na AT3 e conexão SVG */
+.at3-palco-traducao {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-4, 16px);
+  padding-top: var(--esp-2, 8px);
+}
+
+.at3-subbloco {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2, 8px);
+}
+
+.at3-conexao-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  overflow: visible;
+}
+
+.conexao-svg-curva {
+  stroke: var(--acento, var(--cor-traducao));
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.92;
+}
+
+.codons-faixa {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2, 8px);
+}
+
+.codon-grupo,
+.aa-conta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: var(--raio-medio, 10px);
+  border: 1px solid var(--separador, rgba(255, 255, 255, 0.14));
+  background: var(--superficie-elevada, #212428);
+  color: var(--texto, #f5f5f7);
+  font-size: var(--tipo-dado, 13px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform var(--dur-micro, 120ms) var(--curva-padrao, ease),
+              border-color var(--dur-micro, 120ms) var(--curva-padrao, ease),
+              background-color var(--dur-micro, 120ms) var(--curva-padrao, ease);
+}
+
+.codon-grupo:hover,
+.aa-conta:hover {
+  border-color: var(--acento, var(--cor-traducao));
+}
+
+.codon-grupo[data-selecionado="true"],
+.aa-conta[data-selecionado="true"] {
+  background: color-mix(in srgb, var(--acento, var(--cor-traducao)) 22%, var(--superficie));
+  border-color: var(--acento, var(--cor-traducao));
+  transform: translateY(-2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .linha-tempo .player-progresso-preenchimento,
+  .linha-tempo-alca,
+  .codon-grupo,
+  .aa-conta {
+    transition: none !important;
+  }
+}
