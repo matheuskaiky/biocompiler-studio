@@ -485,9 +485,18 @@ class TestCliLote(Temp):
                            cwd=self.dir)
         self.assertEqual((rc, out, err), (2, AT1_CSV, ""))
         self.assertFalse((self.dir / "saidas").exists())
+        # --quiet silencia stdout e avisos, mas não oculta diagnósticos de erro (SPEC §8.2).
         rc, out, err = cli("at1", "-i", "entrada.txt", "--quiet", cwd=self.dir)
-        self.assertEqual((rc, out, err), (2, "", ""))
+        self.assertEqual((rc, out), (2, ""))
+        self.assertEqual(err, "".join(f"biocompiler: linha {n}: {rotulo}\n" for n, rotulo in [
+            (2, "BUG - base inválida"), (3, "BUG - START ausente"), (4, "BUG - STOP ausente"),
+            (5, "BUG - frameshift"), (6, "BUG - nonsense / STOP prematuro")]))
         self.assertEqual(ler(self.dir / "saidas" / "at1_resultados.txt"), AT1_CSV)
+        rc, out, err = cli("at3", "--seq", AT3_CASOS[1], "--quiet", "--no-save", cwd=self.dir)
+        self.assertEqual((rc, out, err), (2, "", "biocompiler: linha 1: BUG - CAP 5'\n"))
+        rc, out, err = cli("at1", "--seq", "ATGGCTAAACCGTAA", "--quiet", "--no-save",
+                           cwd=self.dir)
+        self.assertEqual((rc, out, err), (0, "", ""))
 
     def test_seq_direta(self):
         rc, out, err = cli("at1", "--seq", "ATGGCTAAACCGTAA", "--no-save", cwd=self.dir)
@@ -699,6 +708,14 @@ class TestCliAT4(Temp):
         rc, out, err = cli("at4", "--seq1", "ACGT", "--seq2", "ACGT", "--quiet", cwd=self.dir)
         self.assertEqual((rc, out, err), (0, "", ""))
         self.assertEqual(len(list((self.dir / "saidas" / "at4").iterdir())), 9)
+        rc, out, err = cli("at4", "--seq1", "ACGX", "--seq2", "ACGT", "--quiet", cwd=self.dir)
+        self.assertEqual((rc, out), (2, ""))
+        self.assertEqual(err, "biocompiler: local: ERRO - base inválida\n"
+                              "biocompiler: global: ERRO - base inválida\n")
+        rc, out, err = cli("at4", "--seq1", "ACGT", "--seq2", "ACGT", "--match", "x",
+                           "--method", "global", "--quiet", "--no-save", cwd=self.dir)
+        self.assertEqual((rc, out, err),
+                         (2, "", "biocompiler: global: ERRO - parâmetro não numérico\n"))
 
 
 # ================================================== ajuda, exemplos, test
