@@ -29,9 +29,11 @@ def alinhar(metodo, s1=S1, s2=S2, ma=2, mi=-1, g=-2):
 
 
 class BaseAT4(BaseViz):
-    def abrir_at4(self, modo, metodo="both", s1=S1, s2=S2, reduzir=False, alinhamento=None):
-        self.executar("/at4", {"seq1": s1, "seq2": s2, "metodo": metodo, "match": "2",
-                               "mismatch": "-1", "gap": "-2", "modo": modo},
+    def abrir_at4(self, modo, metodo="both", s1=S1, s2=S2, reduzir=False, alinhamento=None,
+                  params=(2, -1, -2)):
+        ma, mi, g = params
+        self.executar("/at4", {"seq1": s1, "seq2": s2, "metodo": metodo, "match": str(ma),
+                               "mismatch": str(mi), "gap": str(g), "modo": modo},
                       reduzir_movimento=reduzir)
         if alinhamento:
             self.js("(() => { const s = document.querySelector('[data-componente=player] "
@@ -299,7 +301,7 @@ class TestCasosEspeciais(BaseAT4):
     def test_empates_e_desempate_exibido(self):
         a, b = "ACGT", "TGCA"
         r = alinhar("global", a, b, 1, -1, -1)
-        self.abrir_at4("rapido", metodo="global", s1=a, s2=b)
+        self.abrir_at4("rapido", metodo="global", s1=a, s2=b, params=(1, -1, -1))
         cel = self.celulas()
         for (i, j), c in cel.items():
             if i and j:
@@ -317,7 +319,7 @@ class TestCasosEspeciais(BaseAT4):
     def test_local_primeiro_maximo_em_ordem_de_leitura(self):
         r = alinhar("local", "AC", "CA", 1, -1, -1)
         self.assertEqual(r.inicio_traceback, (1, 2))
-        self.abrir_at4("rapido", metodo="local", s1="AC", s2="CA")
+        self.abrir_at4("rapido", metodo="local", s1="AC", s2="CA", params=(1, -1, -1))
         cel = self.celulas()
         self.assertEqual([k for k, c in cel.items() if c["inicio"]], [r.inicio_traceback])
 
