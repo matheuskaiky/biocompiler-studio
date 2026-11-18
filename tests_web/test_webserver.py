@@ -107,6 +107,24 @@ class TestPaginas(Base):
                 self.assertEqual(h["X-Content-Type-Options"], "nosniff")
                 self.assertEqual(h["Referrer-Policy"], "no-referrer")
 
+    def _cabecalhos(self, h, corpo):
+        self.assertIn("default-src 'self'", h["Content-Security-Policy"])
+        self.assertEqual(h["X-Content-Type-Options"], "nosniff")
+        self.assertEqual(h["Referrer-Policy"], "no-referrer")
+        self.assertEqual(int(h["Content-Length"]), len(corpo))
+
+    def test_cabecalhos_tambem_em_erros(self):
+        casos = [("/nao-existe", None, 404), ("/api/nao-existe", None, 404),
+                 ("/static/css/nao_existe.css", None, 404), ("/api/at1", None, 405),
+                 ("/api/at1", {"sequencias": []}, 400),
+                 ("/api/exportar", {"atividade": "at4", "seq1": "ACX", "seq2": "AC",
+                                    "metodo": "global"}, 422)]
+        for caminho, dados, status in casos:
+            with self.subTest(caminho=caminho, status=status):
+                st, h, corpo = self.req(caminho, dados, metodo="GET" if status == 405 else None)
+                self.assertEqual(st, status)
+                self._cabecalhos(h, corpo)
+
     def test_404_405(self):
         st, h, corpo = self.req("/nao-existe")
         self.assertEqual(st, 404)
@@ -226,8 +244,44 @@ class TestApiAtividades(Base):
         con.endheaders()
         resp = con.getresponse()
         self.assertEqual(resp.status, 413)
-        self.assertEqual(json.loads(resp.read())["erro"], "requisição acima de 2 MB")
+        corpo = resp.read()
+        self.assertEqual(json.loads(corpo)["erro"], "requisição acima de 2 MB")
+        self._cabecalhos_resp(resp, corpo)
         con.close()
+
+    def _cabecalhos_resp(self, resp, corpo):
+        self.assertIn("default-src 'self'", resp.getheader("Content-Security-Policy"))
+        self.assertEqual(resp.getheader("X-Content-Type-Options"), "nosniff")
+        self.assertEqual(int(resp.getheader("Content-Length")), len(corpo))
+
+    def test_limite_exato_de_2_mib(self):
+        # 2 MB = 2 * 1024 * 1024 bytes: exatamente no limite é aceito.
+        prefixo, sufixo = b'{"texto": "', b'"}'
+        meio = (2 * 1024 * 1024 - len(prefixo) - len(sufixo))
+        seq = b"A" * (meio // 2 - 1) + b"\\n" + b"A" * (meio - meio // 2 - 1)  # \\n escapado no JSON
+        corpo = prefixo + seq + sufixo
+        self.assertEqual(len(corpo), 2 * 1024 * 1024)
+        st, _, resp = self.req("/api/at4", bruto=corpo)
+        self.assertEqual(st, 200, resp[:200])
+        self.assertEqual(json.loads(resp)[0]["resultado"], "ERRO - sequência muito longa")
+
+    def test_content_length_ausente_ou_invalido(self):
+        import http.client
+        for valor, status, msg in ((None, 411, "Content-Length obrigatório"),
+                                   ("abc", 400, "Content-Length inválido"),
+                                   ("-5", 400, "Content-Length inválido")):
+            with self.subTest(valor=valor):
+                con = http.client.HTTPConnection("127.0.0.1", self.porta, timeout=30)
+                con.putrequest("POST", "/api/at1", skip_accept_encoding=True)
+                if valor is not None:
+                    con.putheader("Content-Length", valor)
+                con.endheaders()
+                resp = con.getresponse()
+                corpo = resp.read()
+                self.assertEqual(resp.status, status)
+                self.assertEqual(json.loads(corpo)["erro"], msg)
+                self._cabecalhos_resp(resp, corpo)
+                con.close()
 
     def test_at4_paridade_parametros_e_texto(self):
         casos = [
@@ -296,6 +350,12 @@ class TestApiInspetor(Base):
              "'alinhamento' deve ser 'local' ou 'global'"),
             ({"seq1": "ACX", "seq2": "AC", "alinhamento": "global", "i": 1, "j": 1},
              "alinhamento com erro: ERRO - base inválida"),
+            ({**base, "alinhamento": "global", "i": True, "j": 0}, "'i' e 'j' devem ser inteiros"),
+            ({**base, "alinhamento": "global", "i": 1, "j": False}, "'i' e 'j' devem ser inteiros"),
+            ({**base, "alinhamento": "global", "i": 1, "j": 1, "match": []},
+             "alinhamento com erro: ERRO - parâmetro não numérico"),
+            ({**base, "alinhamento": "local", "i": 1, "j": 1, "gap": {"x": 1}},
+             "alinhamento com erro: ERRO - parâmetro não numérico"),
         ]
         for dados, msg in casos:
             with self.subTest(msg=msg):
@@ -378,6 +438,13 @@ class TestServeCli(unittest.TestCase):
         proc = self._rodar("--port", "abc")
         self.assertEqual(proc.returncode, 1)
         self.assertIn("usage:", proc.stderr)
+
+    def test_host_fora_do_loopback_exige_opcao(self):
+        proc = self._rodar("--host", "0.0.0.0", "--port", "0")
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("biocompiler: host 0.0.0.0 não é local; use --permitir-rede para expor "
+                      "o servidor na rede", proc.stderr)
+        self.assertEqual(proc.stdout, "")
 
     def test_porta_ocupada(self):
         with socket.socket() as s:
