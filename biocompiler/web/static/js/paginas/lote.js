@@ -1,12 +1,16 @@
-/* Controlador das páginas de lote AT1, AT2 e AT3. */
+/* Controlador das páginas de lote AT1, AT2 e AT3 com player, visualizações SVG e inspetor. */
 
 import { ativarAba, definirStatus, registrarHistorico } from "../app.js";
 import { executarLote, exportarZip, obterCodigoGenetico, obterExemplos } from "../api.js";
 import { atualizarContadores, conectarZonaArquivo } from "../componentes/editor.js";
-import { renderizarEtapas } from "../componentes/etapas.js";
+import { criarEtapas } from "../componentes/etapas.js";
 import { renderizarListaArtefatos } from "../componentes/exportacao.js";
+import { criarInspetor } from "../componentes/inspetor.js";
+import { criarPlayer } from "../componentes/player.js";
 import { renderizarResultadosLote } from "../componentes/resultados.js";
-import { renderizarSequencia } from "../componentes/sequencia.js";
+import { criarVizAT1 } from "../componentes/viz_at1.js";
+import { criarVizAT2 } from "../componentes/viz_at2.js";
+import { criarVizAT3 } from "../componentes/viz_at3.js";
 import { el, limpar, qs } from "../dom.js";
 
 const ALFABETOS = { at1: "ATCG", at2: "AUCG", at3: "AUCG" };
@@ -14,6 +18,7 @@ const ALFABETOS = { at1: "ATCG", at2: "AUCG", at3: "AUCG" };
 let ultimoTextoArquivo = null;
 let tabelaGenetica = null;
 let codonsUsados = new Set();
+let codonAtualTabela = null;
 
 function renderizarTabelaCodons() {
   const cont = qs('[data-regiao="tabela-codons"]');
@@ -29,12 +34,21 @@ function renderizarTabelaCodons() {
     }
     const cls = ["codon-card"];
     if (stops.has(codon)) cls.push("stop");
-    if (codonsUsados.has(codon)) cls.push("usado");
+    if (codonsUsados.has(codon)) cls.push("percorrido");
+    if (codonAtualTabela === codon) cls.push("atual");
     cont.appendChild(el("div", { class: cls.join(" "), "data-codon": codon }, [
       el("strong", { text: codon }),
       el("span", { text: aa }),
     ]));
   }
+}
+
+function sequenciaReferencia(at, reg) {
+  if (!reg) return "";
+  if (at === "at3") {
+    return (reg.dados && reg.dados.regiao_transcrita) || "";
+  }
+  return (reg.entrada && reg.entrada.sequencia) || "";
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -102,6 +116,58 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
+  let itensAtuais = [];
+  let etapasCtrl = null;
+  let playerCtrl = null;
+  let inspetorCtrl = null;
+  let vizCtrl = null;
+
+  function prepararPalcoVisualizacao() {
+    if (!regVis) return;
+    regVis.classList.remove("vazio");
+    limpar(regVis);
+    const slotPlayer = el("div");
+    const slotViz = el("div");
+    const slotInspetor = el("aside", { class: "inspetor-painel", "data-regiao": "inspetor" });
+    regVis.appendChild(slotPlayer);
+    regVis.appendChild(el("div", { class: "viz-grade" }, [slotViz, slotInspetor]));
+
+    inspetorCtrl = criarInspetor(slotInspetor);
+    const onInspecionar = (pos) => inspetorCtrl.inspecionar(pos);
+
+    if (at === "at1") {
+      vizCtrl = criarVizAT1(slotViz, onInspecionar);
+    } else if (at === "at2") {
+      vizCtrl = criarVizAT2(slotViz, onInspecionar);
+    } else {
+      vizCtrl = criarVizAT3(slotViz, onInspecionar, (percorridos, atualCodon) => {
+        codonsUsados = percorridos;
+        codonAtualTabela = atualCodon;
+        renderizarTabelaCodons();
+      });
+    }
+
+    etapasCtrl = criarEtapas(regEtapas, (novoK) => {
+      if (playerCtrl) playerCtrl.irPara(novoK);
+    });
+
+    playerCtrl = criarPlayer(slotPlayer, {
+      onTrocarRegistro: (idx) => {
+        const reg = itensAtuais[idx];
+        if (!reg) return;
+        const linha = reg.entrada && reg.entrada.linha ? reg.entrada.linha : idx + 1;
+        etapasCtrl.definirDados(reg.passos, `Eventos da entrada #${linha}`, 1);
+        inspetorCtrl.definirContexto(sequenciaReferencia(at, reg), reg.passos);
+        vizCtrl.definirRegistro(reg);
+        playerCtrl.selecionarRegistro(idx);
+      },
+      onPasso: (k, passos) => {
+        if (vizCtrl) vizCtrl.atualizar(k, passos);
+        if (etapasCtrl) etapasCtrl.atualizarPasso(k);
+      },
+    });
+  }
+
   async function executar(selecionarAba = true) {
     const payload = ultimoTextoArquivo !== null
       ? { texto: ultimoTextoArquivo }
@@ -112,20 +178,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     definirStatus("Executando…");
     try {
       const itens = await executarLote(at, payload);
+      itensAtuais = itens;
       renderizarResultadosLote(regResultados, at, itens);
-      if (itens.length && regEtapas) {
-        renderizarEtapas(regEtapas, itens[0].passos, "Eventos da primeira entrada");
-      }
-      if (regVis && itens.length) {
-        limpar(regVis);
-        regVis.appendChild(el("div", { class: "cartao" }, [
-          el("h2", { text: "Visualização da entrada #1" }),
-          renderizarSequencia(itens[0].entrada.sequencia),
-        ]));
-        if (at === "at3") {
-          codonsUsados = new Set(itens.flatMap((i) => (i.dados && i.dados.codons) || []));
-          renderizarTabelaCodons();
-        }
+      if (itens.length && regVis && regEtapas) {
+        prepararPalcoVisualizacao();
+        const primeiro = itens[0];
+        etapasCtrl.definirDados(primeiro.passos, "Eventos da primeira entrada", 1);
+        inspetorCtrl.definirContexto(sequenciaReferencia(at, primeiro), primeiro.passos);
+        vizCtrl.definirRegistro(primeiro);
+        playerCtrl.definirRegistros(itens, 0);
       }
       const ok = itens.filter((i) => i.status === "OK").length;
       definirStatus(`Concluído: ${itens.length} registro(s), ${ok} correto(s).`, ok === itens.length ? "ok" : "");

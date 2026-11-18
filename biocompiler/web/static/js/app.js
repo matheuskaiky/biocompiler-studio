@@ -102,13 +102,18 @@ function inicializarMenu() {
 function inicializarModo() {
   const sel = qs('[data-campo="modo-reproducao"]');
   if (!sel) return;
-  try {
-    const salvo = window.localStorage.getItem(CHAVE_MODO);
-    if (salvo && ["rapido", "guiado", "animado"].includes(salvo)) {
-      sel.value = salvo;
+  const paramModo = new URLSearchParams(window.location.search).get("modo");
+  if (paramModo && ["rapido", "guiado", "animado"].includes(paramModo)) {
+    sel.value = paramModo;
+  } else {
+    try {
+      const salvo = window.localStorage.getItem(CHAVE_MODO);
+      if (salvo && ["rapido", "guiado", "animado"].includes(salvo)) {
+        sel.value = salvo;
+      }
+    } catch (e) {
+      // ignora
     }
-  } catch (e) {
-    // ignora
   }
   sel.addEventListener("change", () => {
     try {
@@ -117,6 +122,19 @@ function inicializarModo() {
       // ignora
     }
   });
+}
+
+export function obterModoAtual() {
+  const paramModo = new URLSearchParams(window.location.search).get("modo");
+  if (paramModo && ["rapido", "guiado", "animado"].includes(paramModo)) {
+    return paramModo;
+  }
+  const sel = qs('[data-campo="modo-reproducao"]');
+  return (sel && sel.value) || "rapido";
+}
+
+export function movimentoReduzido() {
+  return Boolean(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 }
 
 function inicializarAjuda() {

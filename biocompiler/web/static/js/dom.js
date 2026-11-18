@@ -9,7 +9,7 @@ export function el(tag, attrs = {}, filhos = []) {
     } else if (k === "text") {
       no.textContent = String(v);
     } else if (k.startsWith("on") && typeof v === "function") {
-      no.addEventListener(k.slice(2), v);
+      no.addEventListener(k.slice(2).toLowerCase(), v);
     } else {
       no.setAttribute(k, v === true ? "" : String(v));
     }
