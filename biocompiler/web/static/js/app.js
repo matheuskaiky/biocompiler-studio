@@ -25,7 +25,17 @@ export function ativarAba(alvoId) {
     const painelId = aba.getAttribute("aria-controls");
     const painel = painelId ? document.getElementById(painelId) : null;
     if (painel) {
+      const estavaOculto = painel.classList.contains("painel-oculto");
       painel.classList.toggle("painel-oculto", !selecionada);
+      if (selecionada && estavaOculto && !movimentoReduzido() && typeof painel.animate === "function") {
+        painel.animate([
+          { opacity: 0, transform: "translateY(4px)" },
+          { opacity: 1, transform: "translateY(0)" },
+        ], {
+          duration: 200,
+          easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+        });
+      }
     }
   }
 }
@@ -79,13 +89,20 @@ function inicializarTema() {
   btn.addEventListener("click", () => {
     const atual = document.documentElement.getAttribute("data-tema") || "escuro";
     const proximo = atual === "escuro" ? "claro" : "escuro";
-    document.documentElement.setAttribute("data-tema", proximo);
-    try {
-      window.localStorage.setItem(CHAVE_TEMA, proximo);
-    } catch (e) {
-      // ignora indisponibilidade de storage
+    const aplicar = () => {
+      document.documentElement.setAttribute("data-tema", proximo);
+      try {
+        window.localStorage.setItem(CHAVE_TEMA, proximo);
+      } catch (e) {
+        // ignora indisponibilidade de storage
+      }
+      atualizarRotulo();
+    };
+    if (!movimentoReduzido() && typeof document.startViewTransition === "function") {
+      document.startViewTransition(aplicar);
+    } else {
+      aplicar();
     }
-    atualizarRotulo();
   });
 }
 
@@ -358,6 +375,50 @@ function inicializarApresentacao() {
   });
 }
 
+function conectarIndicadorSegmentado(grupo, seletorAtivo) {
+  if (!grupo || grupo.querySelector("[data-indicador-segmento]")) return;
+  const ind = document.createElement("span");
+  ind.className = "indicador-segmento";
+  ind.setAttribute("data-indicador-segmento", "");
+  ind.setAttribute("aria-hidden", "true");
+  grupo.insertBefore(ind, grupo.firstChild);
+
+  const posicionar = () => {
+    const ativo = grupo.querySelector(seletorAtivo);
+    if (!ativo) {
+      ind.style.opacity = "0";
+      return;
+    }
+    const gRect = grupo.getBoundingClientRect();
+    const aRect = ativo.getBoundingClientRect();
+    if (aRect.width === 0) return;
+    const dx = aRect.left - gRect.left - grupo.clientLeft;
+    ind.style.opacity = "1";
+    ind.style.width = `${aRect.width}px`;
+    ind.style.transform = `translateX(${dx}px)`;
+  };
+
+  posicionar();
+  grupo.addEventListener("click", () => window.requestAnimationFrame(posicionar));
+  grupo.addEventListener("change", posicionar);
+  window.addEventListener("resize", posicionar);
+  if (typeof MutationObserver === "function") {
+    const obs = new MutationObserver(posicionar);
+    obs.observe(grupo, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["aria-checked", "aria-pressed"],
+    });
+  }
+}
+
+function inicializarIndicadoresSegmentados() {
+  conectarIndicadorSegmentado(qs(".modo-segmentado"), '[aria-checked="true"]');
+  for (const seg of qsa("[data-segmento-metodo]")) {
+    conectarIndicadorSegmentado(seg, '[aria-pressed="true"]');
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   inicializarTema();
   inicializarMenu();
@@ -365,6 +426,7 @@ document.addEventListener("DOMContentLoaded", () => {
   inicializarAjuda();
   inicializarAbas();
   inicializarApresentacao();
+  inicializarIndicadoresSegmentados();
   const params = new URLSearchParams(window.location.search);
   const abaParam = params.get("aba");
   if (abaParam) ativarAbaPorNome(abaParam);

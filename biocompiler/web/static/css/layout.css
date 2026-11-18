@@ -126,6 +126,7 @@ html, body {
   color: var(--texto);
   border-color: var(--separador);
   font-weight: 600;
+  view-transition-name: nav-indicador;
 }
 
 .nav-link[aria-current="page"]::before {

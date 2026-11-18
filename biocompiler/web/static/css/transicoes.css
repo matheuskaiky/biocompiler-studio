@@ -12,7 +12,8 @@
 
 ::view-transition-old(root),
 ::view-transition-new(root),
-::view-transition-group(fita-produto) {
+::view-transition-group(fita-produto),
+::view-transition-group(nav-indicador) {
   animation-duration: var(--dur-media, 300ms);
   animation-timing-function: var(--curva-padrao, ease);
 }
@@ -24,7 +25,8 @@
 
   ::view-transition-old(root),
   ::view-transition-new(root),
-  ::view-transition-group(fita-produto) {
+  ::view-transition-group(fita-produto),
+  ::view-transition-group(nav-indicador) {
     animation-duration: 0.001ms !important;
   }
 }

@@ -54,6 +54,13 @@
   cursor: not-allowed;
 }
 
+.btn:active:not(:disabled),
+.aba-btn:active:not(:disabled),
+.modo-opcao:active:not(:disabled),
+.segmentado-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
 .btn-primario {
   padding: 11px 20px;
   font-size: 14px;
@@ -266,6 +273,21 @@ textarea.editor-seq {
   font-weight: 600;
 }
 
+.painel-abas:not(.painel-oculto) {
+  animation: painel-aba-entrar var(--dur-curta, 200ms) var(--curva-entrada, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+@keyframes painel-aba-entrar {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .painel-oculto {
   display: none;
 }
@@ -475,15 +497,37 @@ dialog.dialogo-ajuda {
   max-width: 560px;
   width: calc(100% - 32px);
   border-radius: var(--raio-cartao);
-  border: 1px solid var(--borda-forte);
-  background: var(--superficie);
   color: var(--texto);
   padding: 20px;
-  box-shadow: var(--sombra-cartao);
+}
+
+dialog.dialogo-ajuda[open] {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  transition: opacity var(--dur-curta, 200ms) var(--curva-entrada, cubic-bezier(0.16, 1, 0.3, 1)),
+    transform var(--dur-curta, 200ms) var(--curva-entrada, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+@starting-style {
+  dialog.dialogo-ajuda[open] {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
 }
 
 dialog.dialogo-ajuda::backdrop {
-  background: rgba(3, 7, 18, 0.65);
+  background: rgba(3, 7, 18, 0.55);
+}
+
+dialog.dialogo-ajuda[open]::backdrop {
+  opacity: 1;
+  transition: opacity var(--dur-curta, 200ms) var(--curva-padrao, ease);
+}
+
+@starting-style {
+  dialog.dialogo-ajuda[open]::backdrop {
+    opacity: 0;
+  }
 }
 
 .vazio {
@@ -1354,6 +1398,7 @@ pre.mono::-webkit-scrollbar-thumb:hover,
 }
 
 .modo-segmentado {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 2px;
@@ -1363,7 +1408,24 @@ pre.mono::-webkit-scrollbar-thumb:hover,
   border: 1px solid var(--separador);
 }
 
+.indicador-segmento {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 0;
+  border-radius: calc(var(--raio-medio) - 2px);
+  background: var(--superficie);
+  border: 1px solid var(--separador);
+  box-shadow: var(--elevacao-1);
+  pointer-events: none;
+  z-index: 0;
+  transition: transform var(--dur-curta, 200ms) var(--curva-padrao, ease),
+    width var(--dur-curta, 200ms) var(--curva-padrao, ease);
+}
+
 .modo-opcao {
+  position: relative;
+  z-index: 1;
   padding: 5px 10px;
   border: 0;
   border-radius: calc(var(--raio-medio) - 2px);
@@ -1373,9 +1435,8 @@ pre.mono::-webkit-scrollbar-thumb:hover,
   font-size: var(--tipo-legenda);
   font-weight: 500;
   cursor: pointer;
-  transition: background-color var(--dur-micro) var(--curva-padrao),
-    color var(--dur-micro) var(--curva-padrao),
-    box-shadow var(--dur-micro) var(--curva-padrao);
+  transition: color var(--dur-micro) var(--curva-padrao),
+    transform var(--dur-micro) var(--curva-padrao);
 }
 
 .modo-opcao:hover {
@@ -1383,10 +1444,8 @@ pre.mono::-webkit-scrollbar-thumb:hover,
 }
 
 .modo-opcao[aria-checked="true"] {
-  background: var(--superficie);
   color: var(--texto);
   font-weight: 600;
-  box-shadow: var(--elevacao-1);
 }
 
 .topo-acoes .btn {
