@@ -190,8 +190,12 @@ class TestMutacoes(BaseLab):
 
 class TestApresentacao(BaseViz):
     def entrar(self):
-        self.js("document.querySelector('[data-acao=apresentacao]').click(), true")
-        self.pausa(300)
+        # repete o clique até a casca estar pronta (máx. 3 s); a asserção do teste não muda
+        for _ in range(10):
+            self.js("document.querySelector('[data-acao=apresentacao]').click(), true")
+            self.pausa(300)
+            if self.js("document.documentElement.getAttribute('data-apresentacao')") == "true":
+                break
 
     def test_atalhos_e_tipografia(self):
         self.executar("/at1", {"seq": "CCATGGCTAAACCGTAAGG", "modo": "guiado"})
@@ -489,8 +493,12 @@ class TestMutacoesCompleto(BaseLabEspiao):
 
 class TestApresentacaoCompleta(BaseLabEspiao):
     def entrar(self):
-        self.js("document.querySelector('[data-acao=apresentacao]').click(), true")
-        self.pausa(300)
+        # repete o clique até a casca estar pronta (máx. 3 s); a asserção do teste não muda
+        for _ in range(10):
+            self.js("document.querySelector('[data-acao=apresentacao]').click(), true")
+            self.pausa(300)
+            if self.js("document.documentElement.getAttribute('data-apresentacao')") == "true":
+                break
 
     def esc(self):
         for tipo in ("rawKeyDown", "keyUp"):
