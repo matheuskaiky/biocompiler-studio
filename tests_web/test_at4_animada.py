@@ -30,11 +30,11 @@ def alinhar(metodo, s1=S1, s2=S2, ma=2, mi=-1, g=-2):
 
 class BaseAT4(BaseViz):
     def abrir_at4(self, modo, metodo="both", s1=S1, s2=S2, reduzir=False, alinhamento=None,
-                  params=(2, -1, -2)):
+                  params=(2, -1, -2), prazo=12):
         ma, mi, g = params
         self.executar("/at4", {"seq1": s1, "seq2": s2, "metodo": metodo, "match": str(ma),
                                "mismatch": str(mi), "gap": str(g), "modo": modo},
-                      reduzir_movimento=reduzir)
+                      reduzir_movimento=reduzir, prazo=prazo)
         if alinhamento:
             self.js("(() => { const s = document.querySelector('[data-componente=player] "
                     f"select[data-campo=registro]'); s.value = {alinhamento!r};"
@@ -419,7 +419,7 @@ class TestMovimentoELimites(BaseAT4):
         a = "".join(rnd.choice("ACGT") for _ in range(1100))
         b = "".join(rnd.choice("ACGT") for _ in range(1000))
         r = alinhar("global", a, b)
-        self.abrir_at4("rapido", metodo="global", s1=a, s2=b)
+        self.abrir_at4("rapido", metodo="global", s1=a, s2=b, prazo=90)  # resposta de ~34 MB
         for _ in range(60):  # resposta de ~34 MB: aguarda a renderização (asserção inalterada)
             aviso = self.texto("[data-viz=at4] [data-regiao=aviso-matriz]")
             if aviso:

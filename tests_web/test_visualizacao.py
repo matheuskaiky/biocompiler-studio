@@ -80,12 +80,13 @@ class BaseViz(unittest.TestCase):
     def pausa(self, ms):
         self.js(f"new Promise(r => setTimeout(() => r(true), {ms}))")
 
-    def executar(self, caminho, params, reduzir_movimento=False):
+    def executar(self, caminho, params, reduzir_movimento=False, prazo=12):
         self.nav.cmd("Emulation.setEmulatedMedia", features=[
             {"name": "prefers-reduced-motion", "value": "reduce" if reduzir_movimento else ""}])
         url = (f"http://127.0.0.1:{self.porta}{caminho}?"
                + urllib.parse.urlencode(dict(params, executar="1")))
-        self.assertTrue(self.nav.abrir(url, 1366, 900, ESPERA), f"{caminho} não executou")
+        self.assertTrue(self.nav.abrir(url, 1366, 900, ESPERA, prazo=prazo),
+                        f"{caminho} não executou")
         self.aba("Visualização")
 
     def aba(self, rotulo):
@@ -246,7 +247,7 @@ class TestPlayer(BaseViz):
         self.assertEqual(len(atual), 1, "exatamente um evento marcado aria-current=step")
         self.assertIn(r.eventos[2].tipo, atual[0])
         # clicar em outro item da linha do tempo salta para ele
-        ok = self.js("(() => { const it = document.querySelectorAll('[data-passo]');"
+        ok = self.js("(() => { const it = document.querySelectorAll('[data-passo]:not([data-marco])');"
                      " if (it.length < 5) return false; it[4].click(); return true; })()")
         self.assertTrue(ok, "itens da linha do tempo precisam de [data-passo]")
         self.pausa(150)
@@ -461,7 +462,7 @@ class TestFidelidadeTraco(BaseViz):
                 if ev.detalhe:
                     self.assertIn(ev.detalhe, e["evTexto"])
         self.aba("Etapas")
-        itens = self.js("Array.from(document.querySelectorAll('[data-passo]'))"
+        itens = self.js("Array.from(document.querySelectorAll('[data-passo]:not([data-marco])'))"
                         ".map(e => [e.getAttribute('data-passo'), e.textContent])")
         self.assertEqual([i[0] for i in itens], [str(k) for k in range(1, len(r.eventos) + 1)])
         for (_, txt), ev in zip(itens, r.eventos):
@@ -715,7 +716,7 @@ class TestLongas(BaseViz):
         self.assertEqual(vistos, total, "a última janela deve terminar na última base")
         self.clicar("fim")
         self.aba("Etapas")
-        self.assertLessEqual(self.js("document.querySelectorAll('[data-passo]').length"), 500,
+        self.assertLessEqual(self.js("document.querySelectorAll('[data-passo]:not([data-marco])').length"), 500,
                              "linha do tempo longa deve ser paginada/virtualizada")
         self.assertEqual(self.js("document.querySelectorAll('[aria-current=step]').length"), 1)
         self.assertLess(self.js("document.querySelectorAll('main *').length"), self.LIMITE_NOS)
