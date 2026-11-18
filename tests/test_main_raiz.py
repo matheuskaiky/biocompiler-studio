@@ -30,7 +30,8 @@ def _env():
 
 def _rodar(args, cwd):
     return subprocess.run([sys.executable, "-S", *args], cwd=cwd, env=_env(),
-                          capture_output=True, text=True, encoding="utf-8", timeout=60)
+                          capture_output=True, text=True, encoding="utf-8", timeout=60,
+                          stdin=subprocess.DEVNULL)  # nunca herdar terminal (D016)
 
 
 SONDA = r'''

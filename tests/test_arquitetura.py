@@ -115,7 +115,7 @@ def _executar(codigo: str):
     return subprocess.run(
         [sys.executable, "-S", "-c", codigo],
         cwd=RAIZ, env=env, capture_output=True, text=True, encoding="utf-8",
-        timeout=60,
+        timeout=60, stdin=subprocess.DEVNULL,  # nunca herdar terminal (D016)
     )
 
 
@@ -337,7 +337,7 @@ class TestIsolamentoDinamico(unittest.TestCase):
         env = dict(os.environ, PYTHONIOENCODING="utf-8")
         proc = subprocess.run([sys.executable, "-S", "-m", "biocompiler", "--help"],
                               cwd=RAIZ, env=env, capture_output=True, text=True,
-                              encoding="utf-8", timeout=60)
+                              encoding="utf-8", timeout=60, stdin=subprocess.DEVNULL)
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertIn("serve", proc.stdout)
 

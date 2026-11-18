@@ -813,7 +813,7 @@ class TestIsolamentoCli(unittest.TestCase):
         proc = subprocess.run(
             [sys.executable, "-S", "-c", SONDA_CLI.format(argv=argv, bloquear=bloquear)],
             cwd=RAIZ, env=_env(), capture_output=True, text=True, encoding="utf-8",
-            timeout=60)
+            timeout=60, stdin=subprocess.DEVNULL)
         self.assertEqual(proc.returncode, 0, proc.stderr)
         return json.loads(proc.stdout.strip().splitlines()[-1])
 
