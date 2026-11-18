@@ -570,6 +570,26 @@ class TestAT2Estados(BaseViz):
                 self.assertEqual(self.js(glob), g)
                 self.assertEqual(self.js(por), esperado)
 
+    def test_fita_processada_mostra_os_exons_unidos(self):
+        """R1: SPEC §7.3 — o íntron sai e as extremidades exônicas se aproximam."""
+        r = servicos.processar_lote("at2", [PRE_2INT])[0]
+        tipos = [e.tipo for e in r.eventos]
+        self.executar("/at2", {"seq": PRE_2INT, "modo": "guiado"})
+        sel = "[data-viz=at2] [data-fita=rna-processado] [data-base]"
+        self.assertEqual(self.contar(sel), 0, "antes da união não há fita processada")
+        self.ir_para(tipos.index("EXONS_UNIDOS"))
+        self.assertEqual(self.contar(sel), 0, "ainda não unido no passo anterior")
+        self.clicar("proximo")  # EXONS_UNIDOS
+        letras = self.js(f"Array.from(document.querySelectorAll({sel!r}))"
+                         ".map(e => e.textContent.trim()).join('')")
+        self.assertEqual(letras, r.rna_processado)
+        removidos = self.js("Array.from(document.querySelectorAll('[data-viz=at2] "
+                            "[data-intron]')).map(e => getComputedStyle(e).opacity)")
+        self.assertTrue(all(float(o) < 0.75 for o in removidos),
+                        f"íntrons removidos devem ficar esmaecidos/riscados na fita original: {removidos}")
+        self.clicar("fim")
+        self.assertEqual(self.contar(sel), len(r.rna_processado))
+
     def test_regua_nos_limites_d009(self):
         for seq, d in ((PRE_D10, "10"), (PRE_D30, "30")):
             r = servicos.processar_lote("at2", [seq])[0]
