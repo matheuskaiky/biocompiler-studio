@@ -44,3 +44,16 @@ def alinhar_par(
             fn(seq1, seq2, "global", match, mismatch, gap),
         )
     return (fn(seq1, seq2, metodo, match, mismatch, gap),)
+
+
+def fluxo_completo(
+    seq1: str,
+    seq2: str,
+    metodo: str = "both",
+    match: int = 2,
+    mismatch: int = -1,
+    gap: int = -2,
+):
+    """Executa o fluxo integrado AT1→AT2→AT3 + AT4 via despacho preguiçoso."""
+    fn = carregar_atividade("all")
+    return fn(seq1, seq2, metodo, match, mismatch, gap)

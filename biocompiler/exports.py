@@ -51,8 +51,16 @@ def csv_lote(atividade: str, resultados) -> str:
     escritor = csv.writer(buf, delimiter=";", lineterminator="\n")
     escritor.writerow(["linha", "status", "resultado", coluna])
     for idx, res in enumerate(resultados, start=1):
-        produto = getattr(res, atributo) if res.ok else texto_falha
-        escritor.writerow([idx, res.status, res.resultado, produto])
+        if res is None:
+            escritor.writerow([
+                idx,
+                "NÃO EXECUTADO",
+                "NÃO EXECUTADO — dependência inválida",
+                texto_falha,
+            ])
+        else:
+            produto = getattr(res, atributo) if res.ok else texto_falha
+            escritor.writerow([idx, res.status, res.resultado, produto])
     return buf.getvalue()
 
 
@@ -357,4 +365,81 @@ def json_at4(
         }
         for res in resultados
     ]
+    return json.dumps(doc, ensure_ascii=False, indent=2) + "\n"
+
+
+def relatorio_fluxo(rf) -> str:
+    """Gera o relatório mestre do modo `all` (AT1→AT2→AT3 nas duas amostras + AT4)."""
+    linhas: list[str] = [
+        _SEP_IGUAL,
+        "LABORATÓRIO COMPLETO (AT1 → AT2 → AT3 + AT4)",
+        _SEP_IGUAL,
+    ]
+    for idx, cadeia in enumerate((rf.seq1, rf.seq2), start=1):
+        linhas.append(f"SEQ{idx}")
+        linhas.append(f"DNA: {cadeia.dna}")
+        linhas.append(f"AT1: {cadeia.at1.resultado}")
+        if cadeia.at1.ok:
+            linhas.append(f"  pré-mRNA: {cadeia.at1.pre_mrna}")
+
+        if cadeia.at2 is None:
+            linhas.append("AT2: NÃO EXECUTADO — dependência inválida")
+        else:
+            linhas.append(f"AT2: {cadeia.at2.resultado}")
+            if cadeia.at2.ok:
+                for n_intr, intr in enumerate(cadeia.at2.introns, start=1):
+                    linhas.append(
+                        f"  Íntron {n_intr}: GU no índice {intr.posicao_gu}, "
+                        f"branch A no índice {intr.posicao_branch}, "
+                        f"AG no índice {intr.posicao_ag}"
+                    )
+                linhas.append(f"  mRNA maduro: {cadeia.at2.mrna_maduro}")
+
+        if cadeia.at3 is None:
+            linhas.append("AT3: NÃO EXECUTADO — dependência inválida")
+        else:
+            linhas.append(f"AT3: {cadeia.at3.resultado}")
+            if cadeia.at3.ok:
+                linhas.append("  Códons: " + " ".join(cadeia.at3.codons))
+                linhas.append(f"  Proteína: {cadeia.at3.proteina}")
+
+        if cadeia.ok:
+            linhas.append("CADEIA: OK")
+        else:
+            linhas.append(f"CADEIA: ERRO (falha em {cadeia.etapa_falha})")
+        linhas.append(_SEP_TRACO)
+
+    texto = "\n".join(linhas) + "\n"
+    partes = [texto] + [relatorio_at4(r) for r in rf.alinhamentos]
+    if len(rf.alinhamentos) == 2 and all(r.ok for r in rf.alinhamentos):
+        partes.append(texto_comparacao(rf.alinhamentos[0], rf.alinhamentos[1]))
+    return "".join(partes)
+
+
+def json_fluxo(
+    seq1: str,
+    seq2: str,
+    metodo: str,
+    match,
+    mismatch,
+    gap,
+    rf,
+    saidas: list[str],
+) -> str:
+    """Serializa o ResultadoFluxo completo em JSON conforme D017."""
+    doc = {
+        "schema_version": 1,
+        "atividade": "all",
+        "entrada": {"seq1": seq1, "seq2": seq2},
+        "configuracao": {
+            "metodo": metodo,
+            "match": match,
+            "mismatch": mismatch,
+            "gap": gap,
+        },
+        "status": "OK" if rf.ok else "ERRO",
+        "dados": dataclasses.asdict(rf),
+        "saidas": list(saidas),
+        "avisos": [],
+    }
     return json.dumps(doc, ensure_ascii=False, indent=2) + "\n"

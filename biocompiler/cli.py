@@ -496,6 +496,161 @@ def _executar_at4(args: argparse.Namespace) -> int:
     return 0 if todos_ok else 2
 
 
+def _artefatos_at4_para_gravar(
+    pasta_destino: Path,
+    resultados,
+    metodo: str,
+    delimitador: str,
+    incluir_comparacao: bool,
+) -> list[tuple[Path, str]]:
+    arquivos: list[tuple[Path, str]] = []
+    for r in resultados:
+        if not r.ok:
+            continue
+        m = r.metodo
+        arquivos.extend([
+            (pasta_destino / f"alinhamento_{m}.txt", exports.relatorio_at4(r)),
+            (
+                pasta_destino / f"matriz_pontuacao_{m}.csv",
+                exports.csv_matriz_pontuacao(r, delimitador),
+            ),
+            (
+                pasta_destino / f"matriz_traceback_{m}.csv",
+                exports.csv_matriz_traceback(r, delimitador),
+            ),
+            (
+                pasta_destino / f"alinhamento_{m}.csv",
+                exports.csv_alinhamento(r, delimitador),
+            ),
+        ])
+    if incluir_comparacao and metodo == "both" and len(resultados) == 2 and all(
+        r.ok for r in resultados
+    ):
+        arquivos.append(
+            (
+                pasta_destino / "comparacao.txt",
+                exports.texto_comparacao(resultados[0], resultados[1]),
+            )
+        )
+    return arquivos
+
+
+def _resolver_pasta_all(
+    metodo: str,
+    out_dir: str | None,
+    force: bool,
+) -> Path:
+    nomes = [
+        "relatorio_mestre.txt",
+        "at1_resultados.txt",
+        "at2_resultados.txt",
+        "at3_resultados.txt",
+        *_nomes_artefatos_at4(metodo),
+    ]
+    if out_dir is not None:
+        pasta = Path(out_dir)
+        for nome in nomes:
+            alvo = pasta / nome
+            if alvo.exists() and not force:
+                raise io_formats.ErroEntrada(
+                    f"arquivo já existe: {alvo} (use --force para sobrescrever)"
+                )
+        return pasta
+
+    base = Path("saidas")
+    pasta = base / "all"
+    if force or not any((pasta / nome).exists() for nome in nomes):
+        return pasta
+    indice = 2
+    while True:
+        pasta = base / f"all_{indice}"
+        if not any((pasta / nome).exists() for nome in nomes):
+            return pasta
+        indice += 1
+
+
+def _executar_all(args: argparse.Namespace) -> int:
+    has_input = args.input is not None
+    has_pair = args.seq1 is not None or args.seq2 is not None
+    if has_input and has_pair:
+        return _erro("use apenas um entre --input e --seq1/--seq2")
+    if not has_input and not has_pair:
+        return _erro("informe --input ou --seq1 e --seq2")
+    if (args.seq1 is None) != (args.seq2 is None):
+        return _erro("--seq1 e --seq2 devem ser informados juntos")
+    if args.out_dir is not None and args.no_save:
+        return _erro("opções incompatíveis: --out-dir e --no-save")
+    if args.ascii and args.format != "text":
+        return _erro(f"opções incompatíveis: --ascii e --format {args.format}")
+
+    try:
+        if args.seq1 is not None:
+            seq1, seq2 = args.seq1, args.seq2
+        else:
+            texto = io_formats.ler_texto(args.input)
+            seq1, seq2 = io_formats.ler_par(texto)
+
+        pasta_destino = None
+        if not args.no_save:
+            pasta_destino = _resolver_pasta_all(args.method, args.out_dir, args.force)
+    except io_formats.ErroEntrada as exc:
+        return _erro(str(exc))
+
+    match = _parse_int_ou_raw(args.match)
+    mismatch = _parse_int_ou_raw(args.mismatch)
+    gap = _parse_int_ou_raw(args.gap)
+
+    rf = servicos.fluxo_completo(seq1, seq2, args.method, match, mismatch, gap)
+
+    saidas_gravadas: list[str] = []
+    if pasta_destino is not None:
+        delimitador = "," if args.delimiter == "comma" else ";"
+        arquivos: list[tuple[Path, str]] = [
+            (pasta_destino / "relatorio_mestre.txt", exports.relatorio_fluxo(rf)),
+            (
+                pasta_destino / "at1_resultados.txt",
+                exports.csv_lote("at1", [rf.seq1.at1, rf.seq2.at1]),
+            ),
+            (
+                pasta_destino / "at2_resultados.txt",
+                exports.csv_lote("at2", [rf.seq1.at2, rf.seq2.at2]),
+            ),
+            (
+                pasta_destino / "at3_resultados.txt",
+                exports.csv_lote("at3", [rf.seq1.at3, rf.seq2.at3]),
+            ),
+            *_artefatos_at4_para_gravar(
+                pasta_destino, rf.alinhamentos, args.method, delimitador, True
+            ),
+        ]
+        try:
+            saidas_gravadas = _gravar_arquivos(arquivos, args.quiet)
+        except OSError as exc:
+            return _erro(f"falha ao gravar em {pasta_destino}: {exc}")
+
+    if args.quiet:
+        for cadeia in (rf.seq1, rf.seq2):
+            if not cadeia.ok:
+                etapa = cadeia.etapa_falha
+                res_etapa = getattr(cadeia, etapa.lower())
+                sys.stderr.write(
+                    f"biocompiler: {cadeia.origem}: {etapa}: {res_etapa.resultado}\n"
+                )
+        for r in rf.alinhamentos:
+            if not r.ok:
+                sys.stderr.write(f"biocompiler: {r.metodo}: {r.resultado}\n")
+    elif args.format == "json":
+        sys.stdout.write(
+            exports.json_fluxo(
+                seq1, seq2, args.method, match, mismatch, gap, rf, saidas_gravadas
+            )
+        )
+    else:
+        _emitir(exports.relatorio_fluxo(rf), args.ascii)
+
+    return 0 if rf.ok else 2
+
+
 def _executar_examples(args: argparse.Namespace) -> int:
     if args.write is None:
         sys.stdout.write(exemplos.texto_exemplos())
@@ -691,7 +846,50 @@ def _criar_parser() -> _CliParser:
     sub_at4.add_argument("--no-save", action="store_true", help="Não grava arquivos")
     sub_at4.add_argument("--force", action="store_true", help="Sobrescreve destinos existentes")
 
-    subparsers.add_parser("all", help=ajudas["all"], description=ajudas["all"])
+    sub_all = subparsers.add_parser(
+        "all",
+        help=ajudas["all"],
+        description=ajudas["all"],
+        epilog=(
+            f"{_EPILOGO_PADRAO}\n"
+            "Exemplo: python -m biocompiler all --seq1 ACGTAC --seq2 ACGTTC --method both"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    sub_all.add_argument("-i", "--input", help="Arquivo TXT/FASTA com 2 sequências ('-' lê stdin)")
+    sub_all.add_argument("--seq1", help="Primeira sequência de DNA")
+    sub_all.add_argument("--seq2", help="Segunda sequência de DNA")
+    sub_all.add_argument(
+        "--method",
+        choices=("local", "global", "both"),
+        default="both",
+        help="Método de alinhamento da AT4 (padrão: both)",
+    )
+    sub_all.add_argument("--match", default="2", help="Pontuação de match (padrão: 2)")
+    sub_all.add_argument("--mismatch", default="-1", help="Pontuação de mismatch (padrão: -1)")
+    sub_all.add_argument("--gap", default="-2", help="Penalidade de gap (padrão: -2)")
+    sub_all.add_argument(
+        "--delimiter",
+        choices=("semicolon", "comma"),
+        default="semicolon",
+        help="Delimitador dos arquivos CSV da AT4 (padrão: semicolon)",
+    )
+    sub_all.add_argument(
+        "--format",
+        choices=("text", "json"),
+        default="text",
+        help="Formato da saída no terminal (padrão: text)",
+    )
+    sub_all.add_argument("--out-dir", help="Pasta explícita para os artefatos")
+    sub_all.add_argument("--fast", action="store_true", help="Execução direta sem pausas")
+    sub_all.add_argument("--quiet", action="store_true", help="Suprime saída padrão e avisos")
+    sub_all.add_argument("--no-save", action="store_true", help="Não grava arquivos")
+    sub_all.add_argument("--force", action="store_true", help="Sobrescreve destinos existentes")
+    sub_all.add_argument(
+        "--ascii",
+        action="store_true",
+        help="Converte símbolos Unicode para ASCII no terminal",
+    )
 
     sub_serve = subparsers.add_parser(
         "serve", help=ajudas["serve"], description=ajudas["serve"]
@@ -737,17 +935,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.comando == "serve":
         return _erro("use python -m biocompiler serve")
 
-    if args.comando == "all":
-        sys.stderr.write(
-            "biocompiler: comando 'all' ainda não implementado neste marco\n"
-        )
-        return 3
-
     try:
         if args.comando in ("at1", "at2", "at3"):
             return _executar_lote(args)
         if args.comando == "at4":
             return _executar_at4(args)
+        if args.comando == "all":
+            return _executar_all(args)
         if args.comando == "examples":
             return _executar_examples(args)
         if args.comando == "test":

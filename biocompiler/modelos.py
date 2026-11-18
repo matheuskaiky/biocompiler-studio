@@ -114,3 +114,26 @@ class ResultadoAT4:
     tamanho: int
     observacao: str
     eventos: tuple[Evento, ...]
+
+
+@dataclass(frozen=True)
+class CadeiaFluxo:
+    """Resultado encadeado AT1→AT2→AT3 de uma sequência de DNA no modo `all`."""
+
+    origem: str
+    dna: str
+    at1: ResultadoAT1
+    at2: ResultadoAT2 | None
+    at3: ResultadoAT3 | None
+    ok: bool
+    etapa_falha: str | None
+
+
+@dataclass(frozen=True)
+class ResultadoFluxo:
+    """Resultado integrado do laboratório completo (AT1→AT2→AT3 em dois DNAs + AT4)."""
+
+    seq1: CadeiaFluxo
+    seq2: CadeiaFluxo
+    alinhamentos: tuple[ResultadoAT4, ...]
+    ok: bool
