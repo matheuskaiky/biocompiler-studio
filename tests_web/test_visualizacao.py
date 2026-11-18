@@ -101,9 +101,13 @@ class BaseViz(unittest.TestCase):
         return e
 
     def clicar(self, acao):
-        ok = self.js("(() => { const b = document.querySelector("
-                     f"'[data-componente=player] [data-acao={acao}]');"
-                     " if (!b) return false; b.click(); return true; })()")
+        for _ in range(20):  # aguarda o player ser montado (asserção inalterada)
+            ok = self.js("(() => { const b = document.querySelector("
+                         f"'[data-componente=player] [data-acao={acao}]');"
+                         " if (!b) return false; b.click(); return true; })()")
+            if ok:
+                break
+            self.pausa(150)
         self.assertTrue(ok, f"botão data-acao={acao} ausente no player")
         self.pausa(150)
 
