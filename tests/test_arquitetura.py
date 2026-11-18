@@ -435,14 +435,23 @@ class TestIsolamentoDinamico(unittest.TestCase):
         self.assertIn("marco M7", r["stderr"])
 
     def test_outros_comandos_funcionam_sem_jinja2(self):
-        # Em M0 os subcomandos de atividade ainda não processam dados,
-        # mas não podem depender da web: o retorno é o provisório (3).
-        for sub in ("at1", "at2", "at3", "at4", "all", "examples", "test"):
-            with self.subTest(subcomando=sub):
-                r = _sondar(f"from biocompiler.__main__ import main\ncodigo = main([{sub!r}])",
+        # M5 (D015): sem entrada, at1–at4 falham com código 1 antes de carregar
+        # qualquer AT; `all` segue provisório (3) até o M6; `examples` e
+        # `test --help` funcionam. `test` sem argumentos não é chamado aqui
+        # porque executaria esta própria suíte.
+        casos = [(["at1"], 1, "informe --input ou --seq"),
+                 (["at2"], 1, "informe --input ou --seq"),
+                 (["at3"], 1, "informe --input ou --seq"),
+                 (["at4"], 1, "informe --input ou --seq1 e --seq2"),
+                 (["all"], 3, "comando 'all' ainda não implementado"),
+                 (["examples"], 0, ""),
+                 (["test", "--help"], 0, "")]
+        for argv, codigo, mensagem in casos:
+            with self.subTest(argv=argv):
+                r = _sondar(f"from biocompiler.__main__ import main\ncodigo = main({argv!r})",
                             bloquear=["jinja2"])
-                self.assertEqual(r["codigo"], 3, r["stderr"])
-                self.assertIn(f"comando '{sub}' ainda não implementado", r["stderr"])
+                self.assertEqual(r["codigo"], codigo, r["stderr"])
+                self.assertIn(mensagem, r["stderr"])
                 self.assertSemWebNemAts(r["carregados"])
 
 
