@@ -151,6 +151,17 @@ class Navegador:
             f.write(base64.b64decode(img["data"]))
 
     def fechar(self):
+        """Fecha o navegador pelo próprio CDP: no WSL, terminar o processo intermediário
+        não encerra o Chrome do Windows, que ficaria acumulando processos."""
+        try:
+            browser_ws = json.load(urllib.request.urlopen(
+                f"http://127.0.0.1:{self.porta}/json/version", timeout=3))["webSocketDebuggerUrl"]
+            self.sock.close()
+            self._conectar(browser_ws.split(f":{self.porta}", 1)[1])
+            self._enviar({"id": 0, "method": "Browser.close", "params": {}})
+            time.sleep(0.5)
+        except Exception:
+            pass
         try:
             self.sock.close()
         except Exception:
@@ -163,3 +174,16 @@ class Navegador:
             self.proc.wait(timeout=10)
         except subprocess.TimeoutExpired:
             self.proc.kill()
+        if self.dir_local.startswith("/mnt/"):
+            # rede de segurança: encerra só os processos deste perfil descartável
+            nome = os.path.basename(self.dir_local)
+            ps = "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe"
+            if os.path.exists(ps):
+                subprocess.run(
+                    [ps, "-NoProfile", "-Command",
+                     "Get-CimInstance Win32_Process -Filter \"Name='chrome.exe'\" | "
+                     f"Where-Object {{ $_.CommandLine -like '*{nome}*' }} | "
+                     "ForEach-Object { Stop-Process -Id $_.ProcessId -Force "
+                     "-ErrorAction SilentlyContinue }"],
+                    stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL, timeout=60)
