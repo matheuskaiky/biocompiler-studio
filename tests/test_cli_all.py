@@ -210,7 +210,14 @@ class TestCliAll(Temp):
         self.assertEqual(doc["dados"], json.loads(json.dumps(dataclasses.asdict(rf),
                                                              ensure_ascii=False)))
         self.assertIsNone(doc["dados"]["seq2"]["at2"])
-        self.assertEqual(len(doc["saidas"]), 13)
+        ordem = (["relatorio_mestre.txt"] + ARQ_ETAPAS[:3]
+                 + [n.format(m=m) for m in ("local", "global") for n in (
+                     "alinhamento_{m}.txt", "matriz_pontuacao_{m}.csv",
+                     "matriz_traceback_{m}.csv", "alinhamento_{m}.csv")]
+                 + ["comparacao.txt"])
+        self.assertEqual(doc["saidas"], [str(Path("r") / n) for n in ordem])
+        for caminho in doc["saidas"]:
+            self.assertTrue((self.dir / caminho).is_file(), caminho)
         self.assertEqual(doc["avisos"], [])
 
     def test_quiet(self):
@@ -226,6 +233,13 @@ class TestCliAll(Temp):
                               "biocompiler: global: ERRO - base inválida\n")
         rc, out, err = cli("all", "--seq1", SEQ1, "--seq2", SEQ2, "--quiet", cwd=self.dir)
         self.assertEqual((rc, out, err), (0, "", ""))
+
+    def test_quiet_com_falha_grava_mesmo_assim(self):
+        rc, out, err = cli("all", "--seq1", "CCCGCTAAACCGTAA", "--seq2", SEQ2, "--method",
+                           "global", "--quiet", cwd=self.dir)
+        self.assertEqual((rc, out, err), (2, "", "biocompiler: Seq1: AT1: BUG - START ausente\n"))
+        rf = executar_fluxo("CCCGCTAAACCGTAA", SEQ2, "global")
+        self._conferir(self.dir / "saidas" / "all", {**self._etapas(rf), **self._arquivos_at4(rf)})
 
     def test_erros_de_entrada(self):
         (self.dir / "tres.txt").write_text("A\nC\nG\n", encoding="utf-8")
@@ -252,10 +266,14 @@ class TestCliAll(Temp):
         args = ("all", "--seq1", SEQ1, "--seq2", SEQ2, "--method", "local", "--out-dir", "r")
         self.assertEqual(cli(*args, cwd=self.dir)[0], 0)
         (self.dir / "r" / "at2_resultados.txt").write_text("antigo\n", encoding="utf-8")
+        (self.dir / "r" / "relatorio_mestre.txt").unlink()
+        (self.dir / "r" / "matriz_pontuacao_local.csv").unlink()
+        antes = {p.name: p.read_bytes() for p in (self.dir / "r").iterdir()}
         rc, out, err = cli(*args, cwd=self.dir)
         self.assertEqual((rc, out), (1, ""))
         self.assertIn("arquivo já existe:", err)
-        self.assertEqual(ler(self.dir / "r" / "at2_resultados.txt"), "antigo\n")
+        # Nada gravado: nem os ausentes recriados, nem os demais sobrescritos.
+        self.assertEqual({p.name: p.read_bytes() for p in (self.dir / "r").iterdir()}, antes)
         self.assertEqual(cli(*args, "--force", cwd=self.dir)[0], 0)
 
     def test_argparse_e_ajuda(self):
@@ -270,6 +288,38 @@ class TestCliAll(Temp):
         for trecho in ("Códigos de saída", "Exemplo", "python -m biocompiler all", "--seq1",
                        "--method", "--format", "--ascii", "--delimiter", "--out-dir"):
             self.assertIn(trecho, out)
+
+    def test_erros_de_argumento_e_leitura_antes_de_carregar_ats(self):
+        sonda = r'''
+import io, json, sys, contextlib
+for nome in ["biocompiler.core.pipeline", "biocompiler.core.at1", "biocompiler.core.at2",
+             "biocompiler.core.at3", "biocompiler.core.at4"]:
+    sys.modules[nome] = None
+erro = io.StringIO()
+with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(erro):
+    from biocompiler.__main__ import main
+    codigo = main({argv!r})
+print(json.dumps({{"codigo": codigo, "stderr": erro.getvalue(),
+                  "core": sorted(n for n in sys.modules if n.startswith("biocompiler.core")
+                                 and sys.modules[n] is not None)}}))
+'''
+        casos = [(["all", "-i", "nao_existe.txt"], "arquivo não encontrado"),
+                 (["all", "--seq1", "A"], "--seq1 e --seq2 devem ser informados juntos"),
+                 (["all", "--seq1", "A", "--seq2", "C", "--out-dir", "d", "--no-save"],
+                  "opções incompatíveis")]
+        for argv, msg in casos:
+            with self.subTest(argv=argv):
+                proc = subprocess.run([sys.executable, "-S", "-c", sonda.format(argv=argv)],
+                                      cwd=RAIZ, env=_env(), capture_output=True, text=True,
+                                      encoding="utf-8", timeout=60, stdin=subprocess.DEVNULL)
+                self.assertEqual(proc.returncode, 0, proc.stderr)
+                r = json.loads(proc.stdout.strip().splitlines()[-1])
+                self.assertEqual(r["codigo"], 1, r["stderr"])
+                self.assertIn(msg, r["stderr"])
+                # Os módulos bloqueados estão em sys.modules como None: importá-los
+                # levantaria ImportError (código 3). Nenhuma AT/pipeline carregada.
+                for nome in ("pipeline", "at1", "at2", "at3", "at4"):
+                    self.assertNotIn(f"biocompiler.core.{nome}", r["core"])
 
     def test_individual_nao_carrega_pipeline(self):
         rc, out, _ = cli("at1", "--seq", "ATGGCTAAACCGTAA", "--no-save", "--format", "csv",
