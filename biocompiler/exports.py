@@ -1,10 +1,20 @@
 """Formatadores puros de relatórios de terminal e exportações CSV/TXT."""
 
 import csv
+import dataclasses
 import io
+import json
 
 _SEP_IGUAL = "=" * 40
 _SEP_TRACO = "-" * 40
+
+_ASCII_MAP = str.maketrans({
+    "↖": "\\",
+    "↑": "^",
+    "←": "<",
+    "·": "*",
+    "×": "x",
+})
 
 _TITULOS_LOTE = {
     "at1": "BIOCOMPILER 1.0 - DNA TRANSCRIBER",
@@ -46,64 +56,80 @@ def csv_lote(atividade: str, resultados) -> str:
     return buf.getvalue()
 
 
-def relatorio_lote(atividade: str, resultados) -> str:
-    """Gera o relatório textual de lote AT1–AT3 fiel aos enunciados."""
+def cabecalho_lote(atividade: str) -> str:
+    """Gera o cabeçalho padrão de um relatório de lote AT1–AT3."""
+    if atividade not in _TITULOS_LOTE:
+        raise ValueError(f"atividade inválida para relatório de lote: {atividade!r}")
+    return f"{_SEP_IGUAL}\n{_TITULOS_LOTE[atividade]}\n{_SEP_IGUAL}\n"
+
+
+def bloco_lote(atividade: str, n: int, res) -> str:
+    """Gera o bloco textual de uma única entrada de lote AT1–AT3."""
     if atividade not in _TITULOS_LOTE:
         raise ValueError(f"atividade inválida para relatório de lote: {atividade!r}")
 
-    linhas: list[str] = [_SEP_IGUAL, _TITULOS_LOTE[atividade], _SEP_IGUAL]
-    for idx, res in enumerate(resultados, start=1):
-        linhas.append(f"ENTRADA: {idx}")
-        linhas.append(f"STATUS: {'CORRETO' if res.ok else 'ERRO'}")
-        if atividade == "at1":
-            if res.ok:
-                linhas.extend([
-                    "Bases: OK",
-                    "START: ATG - OK",
-                    "Quadro de leitura: OK",
-                    f"STOP: {res.codon_stop} - OK",
-                    "Transcrição: OK",
-                    f"pré-mRNA: {res.pre_mrna}",
-                ])
-            else:
-                linhas.extend([
-                    f"TIPO: {res.resultado}",
-                    "pré-mRNA: NÃO GERADO",
-                ])
-        elif atividade == "at2":
-            if res.ok:
-                linhas.extend([
-                    "Sítio 5': OK",
-                    "Branch point: OK",
-                    "Sítio 3': OK",
-                    "Splicing: OK",
-                    "CAP 5': ADICIONADA",
-                    f"Cauda poli-A: {len(res.cauda_adicionada)} A",
-                    f"mRNA MADURO: {res.mrna_maduro}",
-                ])
-            else:
-                linhas.extend([
-                    f"TIPO: {res.resultado}",
-                    "mRNA MADURO: NÃO GERADO",
-                ])
+    linhas: list[str] = [
+        f"ENTRADA: {n}",
+        f"STATUS: {'CORRETO' if res.ok else 'ERRO'}",
+    ]
+    if atividade == "at1":
+        if res.ok:
+            linhas.extend([
+                "Bases: OK",
+                "START: ATG - OK",
+                "Quadro de leitura: OK",
+                f"STOP: {res.codon_stop} - OK",
+                "Transcrição: OK",
+                f"pré-mRNA: {res.pre_mrna}",
+            ])
         else:
-            if res.ok:
-                linhas.extend([
-                    "CAP 5': OK",
-                    "START: AUG - OK",
-                    "Quadro de leitura: OK",
-                    f"STOP: {res.codon_stop} - OK",
-                    f"Cauda poli-A: {res.tamanho_cauda} A - OK",
-                    "Tradução: OK",
-                    f"PROTEÍNA: {res.proteina}",
-                ])
-            else:
-                linhas.extend([
-                    f"TIPO: {res.resultado}",
-                    "PROTEÍNA: NÃO GERADA",
-                ])
-        linhas.append(_SEP_TRACO)
+            linhas.extend([
+                f"TIPO: {res.resultado}",
+                "pré-mRNA: NÃO GERADO",
+            ])
+    elif atividade == "at2":
+        if res.ok:
+            linhas.extend([
+                "Sítio 5': OK",
+                "Branch point: OK",
+                "Sítio 3': OK",
+                "Splicing: OK",
+                "CAP 5': ADICIONADA",
+                f"Cauda poli-A: {len(res.cauda_adicionada)} A",
+                f"mRNA MADURO: {res.mrna_maduro}",
+            ])
+        else:
+            linhas.extend([
+                f"TIPO: {res.resultado}",
+                "mRNA MADURO: NÃO GERADO",
+            ])
+    else:
+        if res.ok:
+            linhas.extend([
+                "CAP 5': OK",
+                "START: AUG - OK",
+                "Quadro de leitura: OK",
+                f"STOP: {res.codon_stop} - OK",
+                f"Cauda poli-A: {res.tamanho_cauda} A - OK",
+                "Tradução: OK",
+                f"PROTEÍNA: {res.proteina}",
+            ])
+        else:
+            linhas.extend([
+                f"TIPO: {res.resultado}",
+                "PROTEÍNA: NÃO GERADA",
+            ])
+    linhas.append(_SEP_TRACO)
     return "\n".join(linhas) + "\n"
+
+
+def relatorio_lote(atividade: str, resultados) -> str:
+    """Gera o relatório textual de lote AT1–AT3 fiel aos enunciados."""
+    cabecalho = cabecalho_lote(atividade)
+    blocos = "".join(
+        bloco_lote(atividade, idx, res) for idx, res in enumerate(resultados, start=1)
+    )
+    return cabecalho + blocos
 
 
 def _csv_grade(seq1: str, seq2: str, linhas_matriz, delimitador: str) -> str:
@@ -145,11 +171,12 @@ def csv_alinhamento(r, delimitador: str = ";") -> str:
 
 
 def _grade_texto(seq1: str, seq2: str, linhas_matriz) -> list[str]:
-    linhas = [" ".join(["", "-", *seq2])]
+    grade = [["", "-", *seq2]]
     rotulos = ["-", *seq1]
     for idx, linha in enumerate(linhas_matriz):
-        linhas.append(" ".join([rotulos[idx], *(str(v) for v in linha)]))
-    return linhas
+        grade.append([rotulos[idx], *(str(v) for v in linha)])
+    largura = max(len(celula) for linha in grade for celula in linha)
+    return [" ".join(celula.rjust(largura) for celula in linha) for linha in grade]
 
 
 def relatorio_at4(r) -> str:
@@ -225,3 +252,109 @@ def texto_comparacao(local, global_) -> str:
         ),
     ]
     return "\n".join(linhas) + "\n"
+
+
+def para_ascii(texto: str) -> str:
+    """Converte setas e símbolos visuais Unicode para ASCII puro."""
+    return texto.translate(_ASCII_MAP)
+
+
+def _formatar_evento(k: int, evento) -> str:
+    texto = f"  {k}. {evento.tipo}"
+    if evento.posicao is not None:
+        texto += f" (índice {evento.posicao})"
+    if evento.detalhe:
+        texto += f": {evento.detalhe}"
+    return texto
+
+
+def passos(r, granularidade: str = "fase") -> list[str]:
+    """Formata os eventos (e linhas/células da matriz AT4, se solicitado) numerados."""
+    matriz = getattr(r, "matriz", None)
+    if granularidade in ("linha", "celula") and matriz is not None:
+        eventos = list(r.eventos)
+        linhas: list[str] = [_formatar_evento(1, eventos[0])]
+        k = 2
+        if granularidade == "linha":
+            for i, linha in enumerate(matriz):
+                linhas.append(f"  {k}. LINHA {i}: " + " ".join(map(str, linha)))
+                k += 1
+        else:
+            for i, (linha_m, linha_d) in enumerate(zip(matriz, r.direcoes)):
+                for j, (valor, direcao) in enumerate(zip(linha_m, linha_d)):
+                    linhas.append(f"  {k}. CELULA ({i},{j}): {valor} {direcao}")
+                    k += 1
+        for evento in eventos[1:]:
+            linhas.append(_formatar_evento(k, evento))
+            k += 1
+        return linhas
+
+    return [_formatar_evento(k, evento) for k, evento in enumerate(r.eventos, start=1)]
+
+
+def _dados_sem_eventos(r) -> dict:
+    dados = dataclasses.asdict(r)
+    dados.pop("eventos", None)
+    return dados
+
+
+def _passos_json(r) -> list[dict]:
+    return [
+        {"tipo": e.tipo, "posicao": e.posicao, "detalhe": e.detalhe}
+        for e in r.eventos
+    ]
+
+
+def json_lote(atividade: str, sequencias, resultados, saidas: list[str]) -> str:
+    """Serializa resultados de lote AT1–AT3 em lista JSON conforme SPEC §8.2/D016."""
+    doc = [
+        {
+            "schema_version": 1,
+            "atividade": atividade,
+            "entrada": {"linha": idx, "sequencia": seq},
+            "configuracao": {},
+            "status": res.status,
+            "resultado": res.resultado,
+            "validacoes": [] if res.ok else [res.resultado],
+            "passos": _passos_json(res),
+            "dados": _dados_sem_eventos(res),
+            "saidas": list(saidas),
+            "avisos": [],
+        }
+        for idx, (seq, res) in enumerate(zip(sequencias, resultados), start=1)
+    ]
+    return json.dumps(doc, ensure_ascii=False, indent=2) + "\n"
+
+
+def json_at4(
+    seq1: str,
+    seq2: str,
+    match,
+    mismatch,
+    gap,
+    resultados,
+    saidas: list[str],
+) -> str:
+    """Serializa resultados da AT4 em lista JSON conforme SPEC §8.2/D016."""
+    doc = [
+        {
+            "schema_version": 1,
+            "atividade": "at4",
+            "entrada": {"seq1": seq1, "seq2": seq2},
+            "configuracao": {
+                "metodo": res.metodo,
+                "match": match,
+                "mismatch": mismatch,
+                "gap": gap,
+            },
+            "status": res.status,
+            "resultado": res.resultado,
+            "validacoes": list(res.erros),
+            "passos": _passos_json(res),
+            "dados": _dados_sem_eventos(res),
+            "saidas": list(saidas),
+            "avisos": [],
+        }
+        for res in resultados
+    ]
+    return json.dumps(doc, ensure_ascii=False, indent=2) + "\n"
