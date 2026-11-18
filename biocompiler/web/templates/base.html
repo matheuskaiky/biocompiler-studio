@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="/static/css/lab.css">
   <script src="/static/js/tema.js"></script>
   <script type="module" src="/static/js/app.js"></script>
+  <script type="module" src="/static/js/componentes/lente_vidro.js"></script>
   {% block scripts %}{% endblock %}
 </head>
 <body data-pagina="{{ pagina }}">
@@ -115,7 +116,7 @@
     </aside>
 
     <div class="area-principal">
-      <header class="barra-topo" data-superficie="vidro">
+      <header class="barra-topo" data-superficie="vidro" data-lente>
         <div class="topo-esquerda">
           <button
             type="button"

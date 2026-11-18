@@ -16,20 +16,24 @@
 .vidro,
 [data-superficie="vidro"] {
   background-color: var(--vidro-fundo);
-  background-image: linear-gradient(
-    180deg,
-    var(--vidro-realce) 0%,
-    transparent 52%
-  );
+  background-image:
+    linear-gradient(180deg, var(--vidro-realce) 0%, transparent 52%),
+    radial-gradient(120% 90% at 50% 0%, var(--vidro-fresnel) 0%, transparent 65%);
   -webkit-backdrop-filter: blur(var(--vidro-desfoque)) saturate(175%);
   backdrop-filter: blur(var(--vidro-desfoque)) saturate(175%);
   border-color: var(--vidro-borda);
-  box-shadow: var(--vidro-especular), var(--elevacao-2);
+  box-shadow: var(--vidro-especular-topo), var(--vidro-sombra-interna), var(--elevacao-2);
+}
+
+[data-superficie="vidro"][data-lente]:not([data-lente-suspensa="true"]) {
+  -webkit-backdrop-filter: var(--vidro-filtro-lente, blur(var(--vidro-desfoque)) saturate(175%));
+  backdrop-filter: var(--vidro-filtro-lente, blur(var(--vidro-desfoque)) saturate(175%));
+  will-change: transform;
 }
 
 [data-superficie="vidro"][data-vidro="espesso"] {
   background-color: var(--vidro-fundo-espesso);
-  box-shadow: var(--vidro-especular), var(--elevacao-3);
+  box-shadow: var(--vidro-especular-topo), var(--vidro-sombra-interna), var(--elevacao-3);
 }
 
 @supports not (backdrop-filter: blur(1px)) {
@@ -40,6 +44,7 @@
 
   .vidro,
   [data-superficie="vidro"],
+  [data-superficie="vidro"][data-lente]:not([data-lente-suspensa="true"]),
   [data-superficie="vidro"][data-vidro="espesso"] {
     background-color: var(--vidro-fundo-opaco);
     background-image: none;
@@ -56,6 +61,7 @@
 
   .vidro,
   [data-superficie="vidro"],
+  [data-superficie="vidro"][data-lente]:not([data-lente-suspensa="true"]),
   [data-superficie="vidro"][data-vidro="espesso"] {
     background-color: var(--vidro-fundo-opaco);
     background-image: none;

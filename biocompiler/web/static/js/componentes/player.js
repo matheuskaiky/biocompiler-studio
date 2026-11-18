@@ -65,6 +65,7 @@ export function criarPlayer(conteiner, callbacks = {}) {
   let marcosEl = null;
   let selReg = null;
   let selVel = null;
+  let raizEl = null;
 
   function parar() {
     if (timer) {
@@ -77,6 +78,10 @@ export function criarPlayer(conteiner, callbacks = {}) {
   }
 
   function atualizarBotaoRep() {
+    if (raizEl) {
+      if (tocando) raizEl.setAttribute("data-lente-suspensa", "true");
+      else raizEl.removeAttribute("data-lente-suspensa");
+    }
     if (!btnRep) return;
     btnRep.setAttribute("aria-pressed", tocando ? "true" : "false");
     btnRep.setAttribute("aria-label", tocando ? "Pausar" : "Reproduzir");
@@ -209,6 +214,7 @@ export function criarPlayer(conteiner, callbacks = {}) {
       class: "player-barra",
       "data-componente": "player",
       "data-superficie": "vidro",
+      "data-lente": "",
       "aria-label": "Player de eventos",
       onKeydown: (ev) => {
         if (ev.target === trilha) return;
@@ -230,6 +236,7 @@ export function criarPlayer(conteiner, callbacks = {}) {
         }
       },
     });
+    raizEl = raiz;
 
     const regValue = (reg, idx) => {
       if (reg && reg.dados && reg.dados.metodo) return String(reg.dados.metodo);
