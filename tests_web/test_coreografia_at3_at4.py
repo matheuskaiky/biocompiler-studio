@@ -151,7 +151,7 @@ class TestAT4Dependencias(Base):
         pares = [[f"{a[0]},{a[1]}", f"{b[0]},{b[1]}", d]
                  for a, b, d in zip(r.caminho, r.caminho[1:], esperado)]
         self.assertEqual(setas, pares, "cada seta, na ordem do traceback, liga as células reais")
-        self.assertIn("vertical", setas, "o caso tem um gap (movimento vertical)")
+        self.assertIn("vertical", [s[2] for s in setas], "o caso tem um gap (movimento vertical)")
 
     def test_zoom(self):
         self.abrir()
