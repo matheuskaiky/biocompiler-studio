@@ -589,6 +589,20 @@ class TestAT2Estados(BaseViz):
         letras = self.js(f"Array.from(document.querySelectorAll({sel!r}))"
                          ".map(e => e.textContent.trim()).join('')")
         self.assertEqual(letras, r.rna_processado)
+        # A opacidade chega ao estado final por transição (≈300 ms), que pode ainda não ter
+        # começado logo após o clique: aguardar (até 3 s) o estado assentado — sem animações
+        # em curso e com a opacidade final aplicada. O critério (< 0,75) não muda; se o íntron
+        # nunca esmaecer, a espera expira e a asserção abaixo falha.
+        for _ in range(30):
+            if self.js("(() => { const els = Array.from(document.querySelectorAll("
+                       "'[data-viz=at2] [data-intron], [data-viz=at2] [data-intron] *'));"
+                       " const parado = els.every(e => e.getAnimations().every(a =>"
+                       " a.playState !== 'running' && a.playState !== 'pending'));"
+                       " const ops = Array.from(document.querySelectorAll('[data-viz=at2] [data-intron]'))"
+                       ".map(e => +getComputedStyle(e).opacity);"
+                       " return parado && ops.length > 0 && ops.every(o => o < 0.75); })()"):
+                break
+            self.pausa(100)
         removidos = self.js("Array.from(document.querySelectorAll('[data-viz=at2] "
                             "[data-intron]')).map(e => getComputedStyle(e).opacity)")
         self.assertTrue(all(float(o) < 0.75 for o in removidos),
