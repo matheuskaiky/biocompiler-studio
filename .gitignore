@@ -1,4 +1,102 @@
+# ---------------------------------------------------------------------------
+# BioCompiler Studio — arquivos locais que não integram a entrega acadêmica
+# ---------------------------------------------------------------------------
+
+# Python: bytecode e caches de execução
 __pycache__/
-*.pyc
-saidas/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyright/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# Ambientes virtuais e instalações locais
+.venv/
+venv/
+env/
+ENV/
+.python-version
+pip-wheel-metadata/
+*.egg-info/
+build/
+dist/
+
+# Variáveis de ambiente, credenciais e arquivos privados
 .env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Resultados produzidos pelo programa, não entradas de exemplo
+/saidas/
+/saidas_*/
+/outputs/
+/relatorios_gerados/
+/logs/
+/tmp/
+/temp/
+
+# Arquivos locais de depuração e inspeção visual
+*.log
+*.log.*
+*.trace
+*.prof
+*.pstats
+/playwright-report/
+/test-results/
+/screenshots_locais/
+/capturas_locais/
+
+# Arquivos temporários e artefatos do sistema operacional
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+*.bak
+*.tmp
+
+# Configurações pessoais de editores/IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# Instruções e arquivos de coordenação interna de agentes
+/AGENTS.md
+/CLAUDE.md
+/CLAUDE.local.md
+/GEMINI.md
+/LEIA-ME.md
+/.claude/
+/.gemini/
+/.codex/
+/.agent/
+/.agents/
+/.antigravity/
+/.herdr/
+/.cursor/
+
+# Gestão interna do desenvolvimento (não necessária para executar o programa)
+/docs/equipe/
+/docs/ROADMAP.md
+/docs/EXECUTION_PLAN.md
+/docs/DECISIONS.md
+/docs/FRONTEND_DESIGN_PLAN.md
+/docs/CORRECTIONS.md
+/docs/METRICAS.md
+
+# MANTER VERSIONADOS:
+# README.md; main.py; requirements-web.txt; biocompiler/ (incluindo web/),
+# exemplos/; tests/; tests_web/; docs/SPEC.md;
+# docs/DEMONSTRACAO.md; docs/RASTREABILIDADE.md.
+# Não usar *.txt, *.csv, *.fasta ou /docs/ como padrões genéricos de exclusão.
