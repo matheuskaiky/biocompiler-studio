@@ -32,7 +32,9 @@ PAGINAS = [
 ]
 
 CONTRASTE = r"""(() => {
- const rgb = s => { const m = s.match(/[\d.]+/g); return m ? m.map(Number) : null; };
+ // color-mix() é serializado como color(srgb r g b [/ a]) com canais em 0–1: converter para 0–255.
+ const rgb = s => { const m = s.match(/[\d.]+/g); if (!m) return null; const v = m.map(Number);
+   return /^color\(srgb/.test(s) ? v.map((x, i) => i < 3 ? x * 255 : x) : v; };
  const lum = c => { const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; };
    return .2126 * f(c[0]) + .7152 * f(c[1]) + .0722 * f(c[2]); };
  const fundo = e => { for (let a = e; a; a = a.parentElement) { const c = rgb(getComputedStyle(a).backgroundColor);
