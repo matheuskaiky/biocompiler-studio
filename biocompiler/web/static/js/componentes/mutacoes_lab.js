@@ -163,7 +163,7 @@ export function criarLabMutacoes(conteiner, { obterSeq, definirSeq, aoAlterar })
   });
 
   const painel = el("section", {
-    class: "cartao mut-painel",
+    class: "secao-plana mut-painel",
     "data-componente": "mutacoes",
   }, [
     el("h2", { text: "Laboratório de mutações" }),

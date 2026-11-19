@@ -13,8 +13,11 @@ function criarGrupo(titulo, links) {
 
 function cardLink(titulo, subtitulo, href) {
   return el("a", { class: "caso-link", href }, [
-    el("strong", { text: titulo }),
-    el("span", { class: "mono", text: subtitulo }),
+    el("span", { class: "caso-link-info" }, [
+      el("strong", { text: titulo }),
+      el("span", { class: "mono", text: subtitulo }),
+    ]),
+    el("span", { class: "caso-link-seta", "aria-hidden": "true", text: "›" }),
   ]);
 }
 

@@ -57,7 +57,13 @@ DECORACAO = r"""(() => {
     if (r.width < 120 || r.height < 40) continue;
     const t = parseFloat(c.borderTopWidth), l = parseFloat(c.borderLeftWidth);
     if (t >= 2 && t > l && c.borderTopColor !== c.borderLeftColor) ruins.push('faixa: ' + e.tagName + '.' + e.className);
-    if ([c.borderTopStyle, c.borderLeftStyle].includes('dashed') && !e.matches('[data-zona-soltar], .zona-arquivo, .vazio'))
+    // Separador solto: o primeiro item visível de um grupo não leva linha acima.
+    const ant = e.previousElementSibling;
+    if (t >= 1 && c.borderTopStyle === 'solid' && l === 0 && (!ant || ant.offsetParent === null) && e.parentElement.closest('[role=tabpanel]'))
+      ruins.push('separador solto: ' + e.tagName + '.' + e.className);
+    // Estado vazio só é exceção enquanto está vazio de fato (sem elementos filhos).
+    const vazioReal = e.matches('.vazio') && e.children.length === 0;
+    if ([c.borderTopStyle, c.borderLeftStyle].some(x => x === 'dashed' || x === 'dotted') && !e.matches('[data-zona-soltar], .zona-arquivo') && !vazioReal)
       ruins.push('tracejado: ' + e.tagName + '.' + e.className);
   }
   return ruins;

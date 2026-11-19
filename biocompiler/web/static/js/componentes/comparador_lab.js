@@ -47,7 +47,7 @@ function criarPainelNivel(nivel, titulo, v1, v2, modo) {
 
   if (l1 === null || l2 === null) {
     return el("section", {
-      class: "cartao comp-nivel comp-nivel-indisponivel",
+      class: "secao-plana comp-nivel comp-nivel-indisponivel",
       "data-nivel": nivel,
     }, [
       el("div", { class: "comp-nivel-topo" }, [
@@ -90,7 +90,7 @@ function criarPainelNivel(nivel, titulo, v1, v2, modo) {
     : resumoDifs;
 
   return el("section", {
-    class: "cartao comp-nivel",
+    class: "secao-plana comp-nivel",
     "data-nivel": nivel,
   }, [
     el("div", { class: "comp-nivel-topo" }, [

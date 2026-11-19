@@ -36,7 +36,7 @@ export function renderizarResultadosLote(conteiner, atividade, itens) {
         class: `selo ${ok ? "selo-ok" : "selo-erro"}`,
         text: ok ? "OK · Válida" : "Diagnóstico",
       });
-      const cartao = el("article", { class: "cartao" }, [
+      const cartao = el("article", { class: "secao-plana" }, [
         el("div", { class: "barra-ferramentas" }, [
           el("strong", { text: `Entrada #${item.entrada.linha}` }),
           selo,
@@ -60,6 +60,6 @@ export function renderizarResultadosLote(conteiner, atividade, itens) {
   ]);
 
   atualizarLista();
-  conteiner.appendChild(el("div", { class: "cartao" }, [resumo, barraFiltro]));
+  conteiner.appendChild(el("div", { class: "secao-plana" }, [resumo, barraFiltro]));
   conteiner.appendChild(lista);
 }
