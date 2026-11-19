@@ -255,6 +255,22 @@ html, body {
   gap: var(--esp-4);
 }
 
+.barra-status[data-regiao="status"] {
+  position: fixed;
+  right: var(--esp-5, 20px);
+  bottom: var(--esp-4, 16px);
+  z-index: 40;
+  width: fit-content;
+  max-width: min(520px, 52vw);
+  pointer-events: none;
+  will-change: transform, opacity;
+  transition: opacity var(--dur-media, 300ms) var(--curva-padrao, ease);
+}
+
+.barra-status[data-regiao="status"].esmaecida {
+  opacity: 0.78;
+}
+
 .rodape-lateral {
   margin-top: auto;
   padding: var(--esp-3) var(--esp-2) 0;

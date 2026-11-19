@@ -6,11 +6,19 @@ const CHAVE_TEMA = "biocompiler_tema";
 const CHAVE_MODO = "biocompiler_modo";
 const CHAVE_HISTORICO = "biocompiler_historico_sessao";
 
+let timerStatus = null;
+
 export function definirStatus(mensagem, tipo = "") {
   const reg = qs('[data-regiao="status"]');
   if (!reg) return;
   reg.textContent = mensagem;
   reg.className = "barra-status" + (tipo ? ` ${tipo}` : "");
+  if (timerStatus) window.clearTimeout(timerStatus);
+  if (tipo !== "erro") {
+    timerStatus = window.setTimeout(() => {
+      reg.classList.add("esmaecida");
+    }, 4500);
+  }
 }
 
 export function ativarAba(alvoId) {
