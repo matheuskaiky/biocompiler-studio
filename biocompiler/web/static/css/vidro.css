@@ -69,3 +69,69 @@
     backdrop-filter: none;
   }
 }
+
+/* Material de botões e seletor de arquivo (OS-M10-15) */
+.btn,
+.btn-icone {
+  background-color: var(--btn-base);
+  background-image: linear-gradient(180deg, var(--btn-topo) 0%, var(--btn-base) 100%);
+  box-shadow: var(--btn-sombra);
+}
+
+.btn:hover:not(:active):not(:disabled),
+.btn-icone:hover:not(:active):not(:disabled) {
+  background-color: var(--btn-hover-base);
+  background-image: linear-gradient(180deg, var(--btn-hover-topo) 0%, var(--btn-hover-base) 100%);
+  box-shadow: var(--btn-sombra-hover);
+  transform: translateY(-1px);
+}
+
+.btn-primario,
+.btn-icone-principal,
+.player-barra .btn-icone-principal {
+  background-color: color-mix(in srgb, var(--cor-destaque) var(--btn-primario-mistura), #000000);
+  background-image: linear-gradient(180deg, var(--btn-brilho) 0%, var(--btn-sombra-primaria) 100%);
+  box-shadow: var(--btn-primario-sombra);
+}
+
+.btn-primario:hover:not(:active):not(:disabled),
+.btn-icone-principal:hover:not(:active):not(:disabled),
+.player-barra .btn-icone-principal:hover:not(:active):not(:disabled) {
+  background-color: color-mix(in srgb, var(--cor-destaque) var(--btn-primario-hover-mistura), #000000);
+  background-image: linear-gradient(180deg, var(--btn-brilho-hover) 0%, var(--btn-sombra-primaria) 100%);
+  box-shadow: var(--btn-primario-sombra-hover);
+  transform: translateY(-1px);
+}
+
+input[type="file"]::file-selector-button {
+  padding: 7px 14px;
+  border-radius: var(--raio-pilula, 999px);
+  border: 1px solid var(--borda);
+  background-color: var(--btn-base);
+  background-image: linear-gradient(180deg, var(--btn-topo) 0%, var(--btn-base) 100%);
+  box-shadow: var(--btn-sombra);
+  color: var(--texto);
+  font-family: var(--fonte-ui);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: box-shadow var(--dur-micro) var(--curva-padrao),
+    background-color var(--dur-micro) var(--curva-padrao),
+    transform var(--dur-micro) var(--curva-padrao);
+}
+
+input[type="file"]::file-selector-button:hover {
+  background-color: var(--btn-hover-base);
+  background-image: linear-gradient(180deg, var(--btn-hover-topo) 0%, var(--btn-hover-base) 100%);
+  box-shadow: var(--btn-sombra-hover);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn:hover:not(:active):not(:disabled),
+  .btn-icone:hover:not(:active):not(:disabled),
+  .btn-primario:hover:not(:active):not(:disabled),
+  .btn-icone-principal:hover:not(:active):not(:disabled),
+  .player-barra .btn-icone-principal:hover:not(:active):not(:disabled) {
+    transform: none;
+  }
+}

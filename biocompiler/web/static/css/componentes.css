@@ -41,6 +41,7 @@
   text-decoration: none;
   transition: background-color var(--dur-micro) var(--curva-padrao),
     border-color var(--dur-micro) var(--curva-padrao),
+    box-shadow var(--dur-micro) var(--curva-padrao),
     transform var(--dur-micro) var(--curva-padrao);
 }
 
@@ -256,17 +257,21 @@ textarea.editor-seq {
 }
 
 .abas-lista {
-  display: inline-flex;
+  display: flex;
   flex-wrap: wrap;
   gap: 3px;
   padding: 4px;
   border-radius: var(--raio-pilula);
   background: var(--superficie-elevada);
   border: 1px solid var(--separador);
+  width: 100%;
   max-width: 100%;
+  margin-bottom: var(--esp-4, 16px);
 }
 
 .aba-btn {
+  flex: 1 1 0;
+  text-align: center;
   padding: 6px 12px;
   border-radius: var(--raio-pilula);
   border: 1px solid transparent;

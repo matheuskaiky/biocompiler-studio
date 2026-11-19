@@ -15,10 +15,11 @@
 
 .segmentado-metodo {
   position: relative;
-  display: inline-flex;
+  display: flex;
   flex-wrap: wrap;
   gap: 3px;
   padding: 3px;
+  width: 100%;
   border-radius: var(--raio-pilula, 999px);
   background: var(--superficie-elevada, #212428);
   border: 1px solid var(--separador, rgba(255, 255, 255, 0.12));
@@ -27,6 +28,8 @@
 .segmentado-btn {
   position: relative;
   z-index: 1;
+  flex: 1 1 0;
+  text-align: center;
   padding: 6px 12px;
   border: 1px solid transparent;
   border-radius: var(--raio-pilula, 999px);

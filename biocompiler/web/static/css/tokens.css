@@ -106,6 +106,21 @@
   --ambiente-1: rgba(94, 106, 210, 0.11);
   --ambiente-2: rgba(32, 201, 151, 0.08);
 
+  /* Material de botões (OS-M10-15) */
+  --btn-topo: #2c3038;
+  --btn-base: #21242b;
+  --btn-hover-topo: #343943;
+  --btn-hover-base: #272b33;
+  --btn-brilho: rgba(255, 255, 255, 0.14);
+  --btn-brilho-hover: rgba(255, 255, 255, 0.22);
+  --btn-sombra-primaria: rgba(0, 0, 0, 0.12);
+  --btn-primario-mistura: 100%;
+  --btn-primario-hover-mistura: 92%;
+  --btn-sombra: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 2px 6px rgba(0, 0, 0, 0.36);
+  --btn-sombra-hover: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 4px 12px rgba(0, 0, 0, 0.44);
+  --btn-primario-sombra: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 3px 10px color-mix(in srgb, var(--cor-destaque) 38%, rgba(0, 0, 0, 0.4));
+  --btn-primario-sombra-hover: inset 0 1px 0 rgba(255, 255, 255, 0.36), 0 6px 16px color-mix(in srgb, var(--cor-destaque) 46%, rgba(0, 0, 0, 0.46));
+
   /* Movimento */
   --dur-micro: 120ms;
   --dur-curta: 200ms;
@@ -201,6 +216,21 @@
   --texto-vidro-secundario: #363b45;
   --ambiente-1: rgba(94, 106, 210, 0.09);
   --ambiente-2: rgba(32, 201, 151, 0.07);
+
+  /* Material de botões (OS-M10-15) */
+  --btn-topo: #ffffff;
+  --btn-base: #eceef3;
+  --btn-hover-topo: #f8f9fc;
+  --btn-hover-base: #e2e5ec;
+  --btn-brilho: rgba(255, 255, 255, 0.04);
+  --btn-brilho-hover: rgba(255, 255, 255, 0.08);
+  --btn-sombra-primaria: rgba(0, 0, 0, 0.20);
+  --btn-primario-mistura: 86%;
+  --btn-primario-hover-mistura: 78%;
+  --btn-sombra: inset 0 1px 0 rgba(255, 255, 255, 0.90), 0 1px 3px rgba(15, 23, 42, 0.10);
+  --btn-sombra-hover: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 4px 10px rgba(15, 23, 42, 0.14);
+  --btn-primario-sombra: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 3px 10px color-mix(in srgb, var(--cor-destaque) 34%, rgba(15, 23, 42, 0.18));
+  --btn-primario-sombra-hover: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 6px 16px color-mix(in srgb, var(--cor-destaque) 42%, rgba(15, 23, 42, 0.24));
 }
 
 [data-pagina="lab"] { --cor-destaque: var(--cor-dna); }
